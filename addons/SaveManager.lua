@@ -1,21 +1,3 @@
---!nonstrict
---[[
-	Spectra.wtf — SaveManager  (v2.0.0)
-	Gerencia configurações: criar, salvar, carregar, renomear, excluir, listar, importar/exportar JSON.
-
-	Persistência:
-	  • Usa writefile/readfile/isfile/isfolder/makefolder/listfiles/delfile SOMENTE se existirem e funcionarem.
-	  • Caso contrário usa fallback em memória (vale apenas enquanto o jogo/executor estiver aberto).
-	  • Arquivos são lidos apenas como JSON (JSONDecode). Nenhum código importado é executado.
-
-	Uso:
-	  local SaveManager = loadstring(game:HttpGet("URL/addons/SaveManager.lua"))()
-	  SaveManager:SetLibrary(UI)
-	  SaveManager:SetFolder("MeuHub/MeuJogo")
-	  SaveManager:BuildConfigSection(Tab)          -- Tab ou Groupbox
-	  SaveManager:LoadAutoloadConfig()
-]]
-
 local HttpService = game:GetService("HttpService")
 
 local function getEnv()
@@ -37,7 +19,6 @@ local SaveManager = {
 	Version = "2.0.0",
 }
 
--- memória compartilhada durante a sessão (sobrevive a re-execuções quando getgenv existe)
 local sessionEnv = getEnv()
 local Memory
 if sessionEnv then
@@ -47,12 +28,9 @@ else
 	Memory = {}
 end
 
-----------------------------------------------------------------------------------------
--- Backend de armazenamento
-----------------------------------------------------------------------------------------
 local hasFS = false
 do
-	-- detecção simples e segura, sem executar texto de terceiros
+
 	hasFS = type(writefile) == "function" and type(readfile) == "function" and type(isfile) == "function"
 		and type(isfolder) == "function" and type(makefolder) == "function"
 		and type(listfiles) == "function" and type(delfile) == "function"
@@ -153,9 +131,6 @@ function SaveManager:_Notify(title, text, kind)
 	end
 end
 
-----------------------------------------------------------------------------------------
--- Serialização por tipo (somente dados, nunca código)
-----------------------------------------------------------------------------------------
 local function setToList(set)
 	local list = {}
 	for key, v in pairs(set) do
@@ -263,9 +238,6 @@ function SaveManager:IsIgnored(idx)
 	return false
 end
 
-----------------------------------------------------------------------------------------
--- Operações
-----------------------------------------------------------------------------------------
 function SaveManager:Serialize()
 	local lib = assert(self.Library, "SaveManager: chame SetLibrary(UI) antes")
 	local objects = {}
@@ -412,7 +384,6 @@ function SaveManager:Import(name, json)
 	return self:_Write(name, HttpService:JSONEncode(decoded))
 end
 
--- autoload ----------------------------------------------------------------------------
 function SaveManager:_AutoKey()
 	return self:_Base() .. "/autoload.txt"
 end
@@ -475,9 +446,6 @@ function SaveManager:LoadAutoloadConfig()
 	return ok
 end
 
-----------------------------------------------------------------------------------------
--- Interface pronta (Groupbox "Configuration")
-----------------------------------------------------------------------------------------
 function SaveManager:BuildConfigSection(target)
 	local lib = assert(self.Library, "SaveManager: chame SetLibrary(UI) antes")
 	local gb = target
