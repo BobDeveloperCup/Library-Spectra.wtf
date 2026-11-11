@@ -1,20 +1,3 @@
---!nonstrict
---[[
-	Spectra.wtf — ThemeManager  (v2.0.0)
-	Temas prontos + temas personalizados (salvar/carregar/excluir/padrão) com aplicação em tempo real:
-	cores, transparência, escala, fonte, arredondamento e animações.
-
-	Persistência: arquivos quando writefile/readfile etc. existirem; senão memória da sessão.
-	Os arquivos são apenas JSON; nenhum código importado é executado.
-
-	Uso:
-	  local ThemeManager = loadstring(game:HttpGet("URL/addons/ThemeManager.lua"))()
-	  ThemeManager:SetLibrary(UI)
-	  ThemeManager:SetFolder("MeuHub/MeuJogo")
-	  ThemeManager:ApplyToTab(Tab)           -- Tab ou Groupbox
-	  ThemeManager:LoadDefault()
-]]
-
 local HttpService = game:GetService("HttpService")
 
 local function getEnv()
@@ -86,9 +69,6 @@ ThemeManager.Presets = {
 }
 ThemeManager.PresetOrder = { "Spectra", "Carbon", "Midnight", "Graphite", "Ash", "Paper" }
 
-----------------------------------------------------------------------------------------
--- Armazenamento
-----------------------------------------------------------------------------------------
 function ThemeManager:_Base()
 	return self.Folder .. (self.SubFolder ~= "" and ("/" .. self.SubFolder) or "")
 end
@@ -154,9 +134,6 @@ function ThemeManager:_Notify(text, kind)
 	end
 end
 
-----------------------------------------------------------------------------------------
--- Aplicar / serializar
-----------------------------------------------------------------------------------------
 function ThemeManager:GetCurrent()
 	local lib = assert(self.Library, "ThemeManager: chame SetLibrary(UI) antes")
 	return lib:GetTheme()
@@ -179,7 +156,6 @@ function ThemeManager:Serialize()
 	return HttpService:JSONEncode(data)
 end
 
--- aceita nome de preset, tabela {Background=Color3,...} ou JSON decodificado
 function ThemeManager:ApplyTheme(source)
 	local lib = assert(self.Library, "ThemeManager: chame SetLibrary(UI) antes")
 	local patch = {}
@@ -326,7 +302,6 @@ function ThemeManager:Import(json)
 	return self:ApplyData(data)
 end
 
--- tema padrão (carregado por LoadDefault) --------------------------------------------------
 function ThemeManager:_DefaultKey()
 	return self:_Base() .. "/themes_default.txt"
 end
@@ -367,9 +342,6 @@ function ThemeManager:LoadDefault()
 	return self:LoadCustom(name)
 end
 
-----------------------------------------------------------------------------------------
--- Interface
-----------------------------------------------------------------------------------------
 function ThemeManager:SyncUI()
 	local lib = self.Library
 	if not lib or not self.Controls then
@@ -461,7 +433,6 @@ function ThemeManager:ApplyToTab(target)
 		end,
 	})
 
-	-- temas personalizados
 	local nameInput = custom:AddInput("ThemeManager_Name", { Text = "Theme name", Placeholder = "my-theme" })
 	local list = custom:AddDropdown("ThemeManager_List", { Text = "Saved themes", Values = self:ListCustom(), AllowNull = true, Searchable = true })
 	local defaultLabel = custom:AddLabel({ Text = "Default: none", Muted = true })
