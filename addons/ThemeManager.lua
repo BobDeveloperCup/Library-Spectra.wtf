@@ -10,7 +10,7 @@ local function getEnv()
 	return nil
 end
 
-local ThemeManager = { Folder = "SpectraWTF", SubFolder = "", Library = nil, Version = "2.0.0" }
+local ThemeManager = { Folder = "SpectraWTF", SubFolder = "", Library = nil, Version = "2.1.0" }
 
 local sessionEnv = getEnv()
 local Memory
@@ -35,7 +35,7 @@ ThemeManager.PersistentStorage = hasFS
 
 local COLOR_KEYS = { "Background", "Sidebar", "Surface", "Element", "Hover", "Border", "Text", "Muted", "Accent" }
 local STATUS_KEYS = { "Success", "Error", "Warning", "Info" }
-local NUMBER_KEYS = { "Transparency", "Scale", "Rounding", "AnimSpeed" }
+local NUMBER_KEYS = { "Transparency", "Scale", "Rounding", "AnimSpeed", "BackgroundImageAlpha", "BackgroundBlur" }
 
 local function c(r, g, b)
 	return Color3.fromRGB(r, g, b)
@@ -153,6 +153,12 @@ function ThemeManager:Serialize()
 	end
 	data.animations = theme.Animations
 	data.font = theme.FontFamily
+	data.style = theme.Style
+	data.density = theme.Density
+	data.titleColor = toHex(theme.TitleColor)
+	data.titleAuto = theme.TitleColorAuto
+	data.backgroundImage = theme.BackgroundImage
+	data.backgroundFit = theme.BackgroundImageFit
 	return HttpService:JSONEncode(data)
 end
 
@@ -203,6 +209,27 @@ function ThemeManager:ApplyData(data)
 	end
 	if type(data.font) == "string" then
 		patch.FontFamily = data.font
+	end
+	if type(data.style) == "string" then
+		patch.Style = data.style
+	end
+	if type(data.density) == "string" then
+		patch.Density = data.density
+	end
+	if type(data.titleColor) == "string" then
+		local title = fromHex(data.titleColor)
+		if title then
+			patch.TitleColor = title
+		end
+	end
+	if type(data.titleAuto) == "boolean" then
+		patch.TitleColorAuto = data.titleAuto
+	end
+	if type(data.backgroundImage) == "string" then
+		patch.BackgroundImage = data.backgroundImage
+	end
+	if type(data.backgroundFit) == "string" then
+		patch.BackgroundImageFit = data.backgroundFit
 	end
 	return self:ApplyTheme(patch)
 end
@@ -385,6 +412,48 @@ function ThemeManager:ApplyToTab(target)
 		end
 	end })
 
+	self.Controls.Style = general:AddDropdown("ThemeManager_Style", {
+		Text = "Style", Icon = "swatch-book", Values = lib.StyleOrder, Default = lib.Theme.Style,
+		Description = "Material, shape and palette: Liquid Glass, Glassmorphism, Minimalist...",
+		Callback = function(value)
+			if value then
+				lib:SetStyle(value)
+				self:SyncUI()
+			end
+		end,
+	})
+	self.Controls.BackgroundBlur = general:AddSlider("ThemeManager_Blur", {
+		Text = "Background blur", Min = 0, Max = 24, Default = lib.Theme.BackgroundBlur, Rounding = 0,
+		Callback = function(v) lib:SetTheme("BackgroundBlur", v) end,
+	})
+	self.Controls.BackgroundImage = general:AddInput("ThemeManager_BgImage", {
+		Text = "Background image", Placeholder = "rbxassetid://ID, number or file path", Default = lib.Theme.BackgroundImage,
+		Finished = true,
+		Callback = function(v) lib:SetTheme("BackgroundImage", v or "") end,
+	})
+	self.Controls.BackgroundImageAlpha = general:AddSlider("ThemeManager_BgAlpha", {
+		Text = "Image transparency", Min = 0, Max = 1, Default = lib.Theme.BackgroundImageAlpha, Rounding = 2,
+		Callback = function(v) lib:SetTheme("BackgroundImageAlpha", v) end,
+	})
+	self.Controls.BackgroundImageFit = general:AddDropdown("ThemeManager_BgFit", {
+		Text = "Image fit", Values = { "Crop", "Fit", "Stretch" }, Default = lib.Theme.BackgroundImageFit,
+		Callback = function(v)
+			if v then
+				lib:SetTheme("BackgroundImageFit", v)
+			end
+		end,
+	})
+
+	self.Controls.TitleColor = colors:AddColorPicker("ThemeManager_TitleColor", {
+		Text = "Title", Default = lib.Theme.TitleColor, Title = "Theme: Title",
+		Callback = function(color)
+			lib:SetTheme("TitleColor", color)
+		end,
+	})
+	colors:AddButton({ Text = "Title follows text color", Icon = "Undo", Func = function()
+		lib:SetTheme({ TitleColorAuto = true, TitleColor = lib.Theme.Text })
+		self:SyncUI()
+	end })
 	for _, key in ipairs(COLOR_KEYS) do
 		local picker = colors:AddColorPicker("ThemeManager_" .. key, {
 			Text = key, Default = lib.Theme[key], Title = "Theme: " .. key,
