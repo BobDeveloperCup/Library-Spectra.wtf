@@ -2,7 +2,7 @@
 
 Spritesheet: `rbxassetid://139871994703359` — 1000 x 1000 px, grid de células de 25 px, ícones do **Lucide 0.470.0** (24 x 24 px).
 
-Cada nome mapeia para `(coluna, linha)` da grade. O `ImageRectOffset` usado pela biblioteca é `(max(0, coluna*25 - 1), linha*25)` e o `ImageRectSize` é `(24, 24)`.
+O catálogo é dado estático dentro de `Spectra.lua` (nenhum script externo é necessário em tempo de execução). Cada nome mapeia para `(coluna, linha)` da grade. O `ImageRectOffset` usado pela biblioteca é `(max(0, coluna*25 - 1), linha*25)` e o `ImageRectSize` é `(24, 24)`.
 
 **1541 nomes** identificados por correlação de imagem (score ≥ 0,95) entre cada célula da spritesheet enviada e a renderização dos SVGs oficiais do Lucide 0.470.0. Nenhuma coordenada foi inventada.
 
