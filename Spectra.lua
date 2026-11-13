@@ -20,10 +20,14 @@ local UserInputService = getService("UserInputService")
 local RunService = getService("RunService")
 local TextService = getService("TextService")
 local CoreGui = getService("CoreGui")
+local Lighting = getService("Lighting")
+local ContentProvider = getService("ContentProvider")
+local AssetService = getService("AssetService")
+local GuiService = getService("GuiService")
 
 local Spectra = {}
 Spectra.__index = Spectra
-Spectra.Version = "2.0.0"
+Spectra.Version = "2.1.0"
 Spectra.Name = "Spectra.wtf"
 Spectra.DefaultLogo = "rbxassetid://96535159972301"
 
@@ -57,6 +61,14 @@ local DefaultTheme = {
 	AnimSpeed = 1,
 	Animations = true,
 	FontFamily = "Gotham",
+	Style = "Spectra",
+	Density = "Comfortable",
+	TitleColor = Color3.fromRGB(245, 245, 245),
+	TitleColorAuto = true,
+	BackgroundImage = "",
+	BackgroundImageAlpha = 0.8,
+	BackgroundImageFit = "Crop",
+	BackgroundBlur = 0,
 }
 
 local ColorKeys = {
@@ -81,6 +93,100 @@ table.sort(Spectra.FontFamilies)
 Spectra.ColorKeys = ColorKeys
 Spectra.DefaultTheme = DefaultTheme
 
+local function rgb(r, g, b)
+	return Color3.fromRGB(r, g, b)
+end
+
+local Styles = {
+	["Spectra"] = {
+		Rounding = 8,
+		Palette = {
+			Background = rgb(10, 10, 10), Sidebar = rgb(13, 13, 13), Surface = rgb(18, 18, 18), Element = rgb(25, 25, 25),
+			Hover = rgb(34, 34, 34), Border = rgb(39, 39, 39), Text = rgb(245, 245, 245), Muted = rgb(125, 125, 125),
+			Accent = rgb(255, 255, 255),
+		},
+		Material = { Window = 0, Content = 0, Surface = 0, Element = 0, Popup = 0, StrokeShift = 0, StrokeWidth = 1, Blur = 0 },
+	},
+	["Liquid Glass"] = {
+		Rounding = 16,
+		Palette = {
+			Background = rgb(18, 24, 38), Sidebar = rgb(30, 40, 64), Surface = rgb(120, 150, 205), Element = rgb(150, 180, 235),
+			Hover = rgb(185, 210, 255), Border = rgb(255, 255, 255), Text = rgb(250, 252, 255), Muted = rgb(200, 214, 240),
+			Accent = rgb(150, 200, 255),
+		},
+		Material = {
+			Window = 0.32, Content = 0.5, Surface = 0.72, Element = 0.78, Popup = 0.2, StrokeKey = "Text", StrokeShift = 0.62,
+			StrokeWidth = 1.25, Blur = 16,
+			Sheen = { Rotation = 35, From = 1, To = 0.72, AlphaFrom = 0, AlphaTo = 0.22 },
+		},
+	},
+	["Glassmorphism"] = {
+		Rounding = 12,
+		Palette = {
+			Background = rgb(20, 12, 36), Sidebar = rgb(36, 22, 62), Surface = rgb(90, 62, 150), Element = rgb(120, 90, 190),
+			Hover = rgb(150, 115, 225), Border = rgb(215, 195, 255), Text = rgb(248, 244, 255), Muted = rgb(190, 176, 222),
+			Accent = rgb(196, 150, 255),
+		},
+		Material = {
+			Window = 0.22, Content = 0.4, Surface = 0.6, Element = 0.66, Popup = 0.1, StrokeKey = "Text", StrokeShift = 0.5,
+			StrokeWidth = 1, Blur = 12,
+			Sheen = { Rotation = 60, From = 1, To = 0.6, AlphaFrom = 0, AlphaTo = 0.3 },
+		},
+	},
+	["Minimalist"] = {
+		Rounding = 4,
+		Palette = {
+			Background = rgb(250, 250, 250), Sidebar = rgb(243, 243, 243), Surface = rgb(255, 255, 255), Element = rgb(240, 240, 240),
+			Hover = rgb(228, 228, 228), Border = rgb(222, 222, 222), Text = rgb(20, 20, 20), Muted = rgb(120, 120, 120),
+			Accent = rgb(20, 20, 20),
+		},
+		Material = { Window = 0, Content = 0, Surface = 0, Element = 0, Popup = 0, StrokeShift = 0, StrokeWidth = 1, Blur = 0 },
+	},
+	["Neon"] = {
+		Rounding = 6,
+		Palette = {
+			Background = rgb(7, 5, 16), Sidebar = rgb(11, 8, 24), Surface = rgb(16, 11, 34), Element = rgb(26, 18, 52),
+			Hover = rgb(40, 28, 76), Border = rgb(60, 38, 110), Text = rgb(236, 242, 255), Muted = rgb(130, 140, 190),
+			Accent = rgb(0, 229, 255),
+		},
+		Material = {
+			Window = 0.04, Content = 0.06, Surface = 0.1, Element = 0.12, Popup = 0.02, StrokeKey = "Accent", StrokeShift = 0.35,
+			StrokeWidth = 1.5, Blur = 0,
+			Sheen = { Rotation = 90, From = 1, To = 0.84, AlphaFrom = 0, AlphaTo = 0 },
+		},
+	},
+	["Obsidian"] = {
+		Rounding = 2,
+		Palette = {
+			Background = rgb(0, 0, 0), Sidebar = rgb(0, 0, 0), Surface = rgb(8, 8, 8), Element = rgb(18, 18, 18),
+			Hover = rgb(30, 30, 30), Border = rgb(70, 70, 70), Text = rgb(255, 255, 255), Muted = rgb(150, 150, 150),
+			Accent = rgb(255, 255, 255),
+		},
+		Material = { Window = 0, Content = 0, Surface = 0, Element = 0, Popup = 0, StrokeShift = -0.15, StrokeWidth = 1, Blur = 0 },
+	},
+}
+Spectra.Styles = Styles
+Spectra.StyleOrder = { "Spectra", "Liquid Glass", "Glassmorphism", "Minimalist", "Neon", "Obsidian" }
+Spectra.Densities = { "Compact", "Comfortable" }
+
+local function luminance(color)
+	local function channel(v)
+		if v <= 0.03928 then
+			return v / 12.92
+		end
+		return ((v + 0.055) / 1.055) ^ 2.4
+	end
+	return 0.2126 * channel(color.R) + 0.7152 * channel(color.G) + 0.0722 * channel(color.B)
+end
+
+local function contrastRatio(a, b)
+	local la, lb = luminance(a), luminance(b)
+	if la < lb then
+		la, lb = lb, la
+	end
+	return (la + 0.05) / (lb + 0.05)
+end
+
 local function toAsset(name)
 	if type(name) == "number" then
 		return "rbxassetid://" .. tostring(math.floor(name))
@@ -100,10 +206,15 @@ local IconManager = {
 	Asset = "rbxassetid://139871994703359",
 	Cell = 25,
 	Size = 24,
+	Sheet = { Width = 1000, Height = 1000, OffsetX = -1, OffsetY = 0 },
+	Scale = 1,
+	Status = "Pending",
+	Mode = "Asset",
 	Catalog = {},
 	Aliases = {},
 	Fallback = nil,
 	Warned = {},
+	Holders = setmetatable({}, { __mode = "k" }),
 }
 Spectra.IconManager = IconManager
 
@@ -164,7 +275,6 @@ local LegacyAliases = {
 	["alert-triangle"] = "triangle-alert",
 	["check-circle"] = "circle-check",
 	["help-circle"] = "circle-help",
-	["home"] = "house",
 	["wand-2"] = "wand-sparkles",
 	["x-circle"] = "circle-x",
 }
@@ -213,6 +323,16 @@ function IconManager:Has(name)
 	return self:Resolve(name) ~= nil
 end
 
+function IconManager:Rect(col, row)
+	local sheet, scale = self.Sheet, self.Scale
+	local size = math.max(1, math.floor(self.Size * scale + 0.5))
+	local maxX = math.max(0, math.floor(sheet.Width * scale + 0.5) - size)
+	local maxY = math.max(0, math.floor(sheet.Height * scale + 0.5) - size)
+	local x = math.clamp(math.floor((col * self.Cell + sheet.OffsetX) * scale + 0.5), 0, maxX)
+	local y = math.clamp(math.floor((row * self.Cell + sheet.OffsetY) * scale + 0.5), 0, maxY)
+	return Vector2.new(x, y), Vector2.new(size, size)
+end
+
 function IconManager:Get(name)
 	local key = self:Resolve(name)
 	local missing = false
@@ -229,26 +349,173 @@ function IconManager:Get(name)
 	if not cell then
 		return nil
 	end
+	local offset, size = self:Rect(cell[1], cell[2])
 	return {
 		Name = key,
 		Image = self.Asset,
-		Offset = Vector2.new(math.max(0, cell[1] * self.Cell - 1), cell[2] * self.Cell),
-		Size = Vector2.new(self.Size, self.Size),
+		Content = self.Content,
+		Offset = offset,
+		Size = size,
 		Missing = missing,
 	}
 end
 
 function IconManager:Apply(image, name)
-	local data = self:Get(name)
+	local data = self.Status ~= "Failed" and self:Get(name) or nil
 	if not data then
 		image.Visible = false
 		return false
 	end
-	image.Image = data.Image
+	image.ScaleType = Enum.ScaleType.Stretch
+	local applied = false
+	if data.Content then
+		applied = pcall(function()
+			image.ImageContent = data.Content
+		end)
+	end
+	if not applied then
+		image.Image = data.Image
+	end
 	image.ImageRectOffset = data.Offset
 	image.ImageRectSize = data.Size
 	image.Visible = true
 	return not data.Missing
+end
+
+function IconManager:Refresh()
+	local list = {}
+	for holder, owner in pairs(self.Holders) do
+		table.insert(list, { holder, owner })
+	end
+	for _, entry in ipairs(list) do
+		local holder, owner = entry[1], entry[2]
+		if holder.Parent then
+			local name = holder:GetAttribute("IconName")
+			if name ~= nil then
+				owner:SetIcon(holder, name)
+			end
+		end
+	end
+end
+
+function IconManager:_Process()
+	if not AssetService or not Content or not Content.fromUri or not buffer then
+		return "Asset"
+	end
+	local ok, editable = pcall(function()
+		return AssetService:CreateEditableImageAsync(Content.fromUri(self.Asset))
+	end)
+	if not ok or not editable then
+		return "Asset"
+	end
+	local size = editable.Size
+	self.Scale = size.X / self.Sheet.Width
+	local read, pixels = pcall(function()
+		return editable:ReadPixelsBuffer(Vector2.zero, size)
+	end)
+	if not read or type(pixels) ~= "buffer" then
+		pcall(editable.Destroy, editable)
+		return "Asset"
+	end
+	local total = size.X * size.Y
+	local sum, count = 0, 0
+	for i = 0, total - 1, 7 do
+		local offset = i * 4
+		if buffer.readu8(pixels, offset + 3) >= 128 then
+			sum += (buffer.readu8(pixels, offset) * 0.299 + buffer.readu8(pixels, offset + 1) * 0.587 + buffer.readu8(pixels, offset + 2) * 0.114) / 255
+			count += 1
+		end
+	end
+	if count == 0 then
+		pcall(editable.Destroy, editable)
+		return "Asset"
+	end
+	self.Luma = sum / count
+	if self.Luma >= 0.85 then
+		pcall(editable.Destroy, editable)
+		return "Asset"
+	end
+	for i = 0, total - 1 do
+		local offset = i * 4
+		buffer.writeu8(pixels, offset, 255)
+		buffer.writeu8(pixels, offset + 1, 255)
+		buffer.writeu8(pixels, offset + 2, 255)
+		if i % 80000 == 0 then
+			task.wait()
+		end
+	end
+	local wrote = pcall(function()
+		editable:WritePixelsBuffer(Vector2.zero, size, pixels)
+	end)
+	if not wrote then
+		pcall(editable.Destroy, editable)
+		return "Asset"
+	end
+	self.Content = Content.fromObject(editable)
+	self.Editable = editable
+	return "Editable"
+end
+
+function IconManager:Prepare()
+	if self.Preparing then
+		return
+	end
+	self.Preparing = true
+	task.spawn(function()
+		local failed = false
+		local probe = Instance.new("ImageLabel")
+		probe.Image = self.Asset
+		pcall(function()
+			if ContentProvider then
+				ContentProvider:PreloadAsync({ probe }, function(_, status)
+					if status == Enum.AssetFetchStatus.Failure or status == Enum.AssetFetchStatus.TimedOut then
+						failed = true
+					end
+				end)
+			end
+		end)
+		probe:Destroy()
+		if failed then
+			self.Status = "Failed"
+			warn("[Spectra] a spritesheet de ícones não carregou: " .. tostring(self.Asset))
+		else
+			local ok, mode = pcall(function()
+				return self:_Process()
+			end)
+			self.Mode = ok and mode or "Asset"
+			self.Status = "Ready"
+		end
+		self.Preparing = false
+		self:Refresh()
+	end)
+end
+
+function IconManager:SetGrid(options)
+	if type(options) ~= "table" then
+		return
+	end
+	for _, key in ipairs({ "Cell", "Size" }) do
+		if type(options[key]) == "number" and options[key] > 0 then
+			self[key] = options[key]
+		end
+	end
+	for _, key in ipairs({ "Width", "Height", "OffsetX", "OffsetY" }) do
+		if type(options[key]) == "number" then
+			self.Sheet[key] = options[key]
+		end
+	end
+	self:Refresh()
+end
+
+function IconManager:Info()
+	local count = 0
+	for _ in pairs(self.Catalog) do
+		count += 1
+	end
+	return {
+		Asset = self.Asset, Status = self.Status, Mode = self.Mode, Scale = self.Scale, Luma = self.Luma,
+		Cell = self.Cell, Size = self.Size, Icons = count,
+	}
 end
 
 function IconManager:List()
@@ -262,9 +529,21 @@ end
 
 function IconManager:SetAsset(asset)
 	local id = toAsset(asset)
-	if id then
-		self.Asset = id
+	if not id then
+		return
 	end
+	self.Asset = id
+	self.Status = "Pending"
+	self.Mode = "Asset"
+	self.Scale = 1
+	self.Content = nil
+	if self.Editable then
+		pcall(self.Editable.Destroy, self.Editable)
+		self.Editable = nil
+	end
+	self.Preparing = false
+	self:Refresh()
+	self:Prepare()
 end
 
 IconManager:Load(CatalogData)
@@ -431,9 +710,18 @@ local function getEnv()
 	return FallbackEnv
 end
 
+local function insideRect(gui, point)
+	if not gui or not gui.Parent then
+		return false
+	end
+	local position, size = gui.AbsolutePosition, gui.AbsoluteSize
+	return point.X >= position.X and point.X <= position.X + size.X
+		and point.Y >= position.Y and point.Y <= position.Y + size.Y
+end
+
 Spectra.Util = {
 	New = new, FontSize = fs, EnumItem = enumItem, ToHex = toHex, FromHex = fromHex, CopyTable = copyTable, Round = round,
-	KeyDisplay = keyDisplay, GetEnv = getEnv,
+	KeyDisplay = keyDisplay, GetEnv = getEnv, InsideRect = insideRect, Luminance = luminance, Contrast = contrastRatio,
 }
 
 function Spectra:Connect(signal, fn)
@@ -528,29 +816,206 @@ local function validateThemeValue(current, key, value)
 		return math.clamp(value, 0, 0.6)
 	elseif key == "AnimSpeed" then
 		return math.clamp(value, 0, 4)
+	elseif key == "BackgroundImageAlpha" then
+		return math.clamp(value, 0, 1)
+	elseif key == "BackgroundBlur" then
+		return math.clamp(value, 0, 24)
 	elseif key == "FontFamily" and not FontSets[value] then
+		return nil
+	elseif key == "Style" and not Styles[value] then
+		return nil
+	elseif key == "Density" and value ~= "Compact" and value ~= "Comfortable" then
+		return nil
+	elseif key == "BackgroundImageFit" and value ~= "Crop" and value ~= "Fit" and value ~= "Stretch" then
 		return nil
 	end
 	return value
 end
 
+function Spectra:GetViewport()
+	local size = self.Gui and self.Gui.AbsoluteSize or Vector2.new(0, 0)
+	if size.X < 2 or size.Y < 2 then
+		local camera = workspace and workspace.CurrentCamera
+		size = camera and camera.ViewportSize or Vector2.new(1280, 720)
+	end
+	return size
+end
+
+function Spectra:_Reconcile(changed)
+	local theme = self.Theme
+	if changed.TitleColor and not changed.TitleColorAuto then
+		theme.TitleColorAuto = false
+	end
+	if changed.Text and not changed.TitleColor and theme.TitleColorAuto then
+		theme.TitleColor = theme.Text
+	end
+	if changed.Style then
+		self.Material = copyTable(Styles[theme.Style].Material)
+	end
+	if changed.Density and self.M then
+		self.M = Spectra.ComputeMetrics(self.IsMobile, self:GetViewport(), theme.Density)
+		Spectra:SetFontScale(self.M.Font)
+	end
+end
+
+function Spectra:_ApplyBlur()
+	if not Lighting or self.Destroyed then
+		return
+	end
+	local amount = self.Theme.BackgroundBlur
+	local target = (self.Open and amount > 0.05) and amount or 0
+	local effect = self.BlurEffect
+	if not effect and target > 0 then
+		local ok, created = pcall(function()
+			local blur = Instance.new("BlurEffect")
+			blur.Name = "SpectraBlur"
+			blur.Size = 0
+			blur.Parent = Lighting
+			return blur
+		end)
+		if ok then
+			effect = created
+			self.BlurEffect = created
+		end
+	end
+	if effect then
+		self:Tween(effect, { Size = target }, 0.3)
+	end
+end
+
 function Spectra:SetTheme(key, value)
-	if type(key) == "table" then
-		for k, v in pairs(key) do
-			local checked = validateThemeValue(self.Theme[k], k, v)
-			if checked ~= nil then
-				self.Theme[k] = checked
+	local patch = type(key) == "table" and key or { [key] = value }
+	local changed, any = {}, false
+	for k, v in pairs(patch) do
+		local checked = validateThemeValue(self.Theme[k], k, v)
+		if checked ~= nil then
+			self.Theme[k] = checked
+			changed[k] = true
+			any = true
+		end
+	end
+	if not any then
+		return
+	end
+	self:_Reconcile(changed)
+	self:UpdateTheme()
+	self:_ApplyBlur()
+end
+
+function Spectra:SetStyle(name, options)
+	local style = Styles[name]
+	if not style then
+		return false
+	end
+	options = options or {}
+	local patch = { Style = name, BackgroundBlur = style.Material.Blur or 0 }
+	if options.KeepColors ~= true then
+		for k, v in pairs(style.Palette) do
+			patch[k] = v
+		end
+	end
+	if options.KeepRounding ~= true then
+		patch.Rounding = style.Rounding
+	end
+	self:SetTheme(patch)
+	return true
+end
+
+function Spectra:GetStyle()
+	return self.Theme.Style
+end
+
+function Spectra:SetDensity(name)
+	if name ~= "Compact" and name ~= "Comfortable" then
+		return false
+	end
+	self:SetTheme("Density", name)
+	return true
+end
+
+function Spectra:GetDensity()
+	return self.Theme.Density
+end
+
+function Spectra:Fit(inst, prop, fn)
+	return self:Bind(function()
+		inst[prop] = fn(self.M)
+	end, inst)
+end
+
+function Spectra:FitPadding(padding, fn)
+	return self:Bind(function()
+		local v = fn(self.M)
+		padding.PaddingTop = UDim.new(0, v[1])
+		padding.PaddingBottom = UDim.new(0, v[2])
+		padding.PaddingLeft = UDim.new(0, v[3])
+		padding.PaddingRight = UDim.new(0, v[4])
+	end, padding)
+end
+
+function Spectra:HasBackgroundImage()
+	return self.Theme.BackgroundImage ~= nil and self.Theme.BackgroundImage ~= ""
+end
+
+function Spectra:LayerAlpha(layer)
+	local base = self.Material[layer] or 0
+	if self:HasBackgroundImage() then
+		local floor = layer == "Window" and 0.3 or layer == "Content" and 0.3 or layer == "Surface" and 0.12 or 0
+		base = math.max(base, floor)
+	end
+	return 1 - (1 - base) * (1 - self.Theme.Transparency)
+end
+
+function Spectra:Paint(inst, colorKey, layer)
+	inst.BackgroundColor3 = self.Theme[colorKey]
+	inst.BackgroundTransparency = self:LayerAlpha(layer or colorKey)
+end
+
+function Spectra:Layer(inst, colorKey, layer, sheen)
+	local gradient
+	if sheen then
+		gradient = new("UIGradient", { Name = "Sheen", Enabled = false }, inst)
+	end
+	return self:Bind(function()
+		self:Paint(inst, colorKey, layer)
+		if gradient then
+			local m = self.Material.Sheen
+			gradient.Enabled = m ~= nil
+			if m then
+				gradient.Rotation = m.Rotation
+				gradient.Color = ColorSequence.new(Color3.new(m.From, m.From, m.From), Color3.new(m.To, m.To, m.To))
+				gradient.Transparency = NumberSequence.new(m.AlphaFrom, m.AlphaTo)
 			end
 		end
-		self:UpdateTheme()
-		return
+	end, inst)
+end
+
+function Spectra:Legible(foreground, background, minimum)
+	minimum = minimum or 4.5
+	if contrastRatio(foreground, background) >= minimum then
+		return foreground
 	end
-	local checked = validateThemeValue(self.Theme[key], key, value)
-	if checked == nil then
-		return
+	local target = luminance(background) > 0.4 and Color3.new(0, 0, 0) or Color3.new(1, 1, 1)
+	for step = 1, 10 do
+		local candidate = foreground:Lerp(target, step / 10)
+		if contrastRatio(candidate, background) >= minimum then
+			return candidate
+		end
 	end
-	self.Theme[key] = checked
-	self:UpdateTheme()
+	return target
+end
+
+function Spectra:GuiPoint(position)
+	local inset = Vector2.new(0, 0)
+	if self.Gui and self.Gui.IgnoreGuiInset and GuiService then
+		local ok, top = pcall(function()
+			return (GuiService:GetGuiInset())
+		end)
+		if ok and top then
+			inset = top
+		end
+	end
+	return Vector2.new(position.X + inset.X, position.Y + inset.Y)
 end
 
 function Spectra:GetTheme()
@@ -567,12 +1032,18 @@ function Spectra:Corner(inst, radius)
 end
 
 function Spectra:Stroke(inst, colorKey, transparency)
+	local base = transparency or 0.25
 	local stroke = new("UIStroke", {
 		Thickness = 1,
-		Transparency = transparency or 0.25,
+		Transparency = base,
 		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 	}, inst)
-	self:Themed(stroke, "Color", colorKey or "Border")
+	self:Bind(function()
+		local m = self.Material
+		stroke.Color = self.Theme[m.StrokeKey or colorKey or "Border"]
+		stroke.Thickness = m.StrokeWidth or 1
+		stroke.Transparency = math.clamp(base + (m.StrokeShift or 0), 0, 1)
+	end, stroke)
 	return stroke
 end
 
@@ -585,13 +1056,20 @@ function Spectra:Text(parent, text, size, colorKey, weight)
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Center,
 	}, parent)
+	label:SetAttribute("BaseSize", size or 12)
 	self:Bind(function()
 		if colorKey ~= false then
 			label.TextColor3 = self.Theme[colorKey or "Text"]
 		end
 		label.Font = self:GetFont(weight or 1)
+		label.TextSize = fs(label:GetAttribute("BaseSize") or size or 12)
 	end, label)
 	return label
+end
+
+function Spectra:SetTextSize(label, size)
+	label:SetAttribute("BaseSize", size)
+	label.TextSize = fs(size)
 end
 
 function Spectra:Scaled(frame)
@@ -622,12 +1100,16 @@ local function applyIcon(self, holder)
 	else
 		color = self.Theme[holder:GetAttribute("ColorKey") or "Muted"]
 	end
-	if holder:GetAttribute("NoTint") then
-		img.ImageColor3 = Color3.new(1, 1, 1)
-	else
-		img.ImageColor3 = color
+	local tint = holder:GetAttribute("NoTint") and Color3.new(1, 1, 1) or color
+	img.ImageColor3 = tint
+	local alpha = holder:GetAttribute("Alpha") or 0
+	img.ImageTransparency = alpha
+	local glyph = holder:FindFirstChild("Glyph")
+	if glyph then
+		glyph.TextColor3 = color
+		glyph.TextTransparency = alpha
+		glyph.Font = self:GetFont(3)
 	end
-	img.ImageTransparency = holder:GetAttribute("Alpha") or 0
 end
 
 function Spectra:SetIcon(holder, name)
@@ -635,18 +1117,40 @@ function Spectra:SetIcon(holder, name)
 	if not img then
 		return
 	end
+	local glyph = holder:FindFirstChild("Glyph")
+	local function showGlyph(label)
+		if not glyph then
+			return
+		end
+		glyph.Visible = label ~= nil
+		if label then
+			glyph.Text = label
+		end
+	end
 	if name == nil or name == "" then
+		holder:SetAttribute("IconName", nil)
 		img.Visible = false
+		showGlyph(nil)
 		return
 	end
 	local asset = toAsset(name)
 	if asset then
+		holder:SetAttribute("IconName", nil)
+		img.ScaleType = Enum.ScaleType.Fit
 		img.Image = asset
 		img.ImageRectOffset = Vector2.new(0, 0)
 		img.ImageRectSize = Vector2.new(0, 0)
 		img.Visible = true
+		showGlyph(nil)
+		return
+	end
+	holder:SetAttribute("IconName", tostring(name))
+	IconManager:Apply(img, name)
+	if img.Visible then
+		showGlyph(nil)
 	else
-		IconManager:Apply(img, name)
+		local clean = tostring(name):gsub("[^%w]", "")
+		showGlyph(clean ~= "" and clean:sub(1, 1):upper() or "?")
 	end
 end
 
@@ -680,6 +1184,11 @@ function Spectra:Icon(parent, name, size, colorKey, noTint)
 		Name = "Img", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1),
 		ScaleType = Enum.ScaleType.Fit, Image = "", Visible = false,
 	}, holder)
+	new("TextLabel", {
+		Name = "Glyph", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Text = "", TextScaled = true,
+		Visible = false,
+	}, holder)
+	IconManager.Holders[holder] = self
 	self:SetIcon(holder, name)
 	self:Bind(function()
 		applyIcon(self, holder)
@@ -851,41 +1360,91 @@ function Spectra:MakeResizable(handle, target, minSize, maxSize, onResize)
 	return list
 end
 
-function Spectra:TrackDrag(frame, callback, onEnd)
-	local active = false
+function Spectra:TrackDrag(frame, callback, onEnd, options)
+	options = options or {}
+	local axis = options.Axis or "Both"
+	local threshold = options.Threshold or (self.IsMobile and 8 or 4)
+	local immediate = options.Immediate == true
 	local hit = new("TextButton", {
 		Name = "Hit", BackgroundTransparency = 1, Text = "", AutoButtonColor = false,
 		Size = UDim2.fromScale(1, 1), ZIndex = 10,
 	}, frame)
+	local state, current, origin = "idle", nil, nil
 	local function update(position)
+		local point = self:GuiPoint(position)
 		local ap, size = frame.AbsolutePosition, frame.AbsoluteSize
 		callback(
-			math.clamp((position.X - ap.X) / math.max(size.X, 1), 0, 1),
-			math.clamp((position.Y - ap.Y) / math.max(size.Y, 1), 0, 1)
+			math.clamp((point.X - ap.X) / math.max(size.X, 1), 0, 1),
+			math.clamp((point.Y - ap.Y) / math.max(size.Y, 1), 0, 1)
 		)
+	end
+	local function release()
+		if state == "drag" then
+			self:LockScroll(false)
+		end
+		state, current, origin = "idle", nil, nil
+	end
+	local function matches(input)
+		if input.UserInputType == Enum.UserInputType.Touch then
+			return input == current
+		end
+		return input.UserInputType == Enum.UserInputType.MouseButton1 and current ~= nil and current.UserInputType == Enum.UserInputType.MouseButton1
 	end
 	local list = {}
 	table.insert(list, hit.InputBegan:Connect(function(input)
-		if isPress(input) then
-			active = true
+		if not isPress(input) or state ~= "idle" then
+			return
+		end
+		current, origin = input, input.Position
+		if input.UserInputType == Enum.UserInputType.Touch and not immediate then
+			state = "pending"
+		else
+			state = "drag"
 			self:LockScroll(true)
 			update(input.Position)
 		end
 	end))
 	table.insert(list, UserInputService.InputChanged:Connect(function(input)
-		if active and isMove(input) then
+		if state == "pending" then
+			if input ~= current then
+				return
+			end
+			local dx, dy = math.abs(input.Position.X - origin.X), math.abs(input.Position.Y - origin.Y)
+			if math.max(dx, dy) < threshold then
+				return
+			end
+			local claims = axis == "Both" or (axis == "X" and dx >= dy * 0.9) or (axis == "Y" and dy >= dx * 0.9)
+			if claims then
+				state = "drag"
+				self:LockScroll(true)
+				update(input.Position)
+			else
+				release()
+			end
+		elseif state == "drag" and isMove(input) then
+			if input.UserInputType == Enum.UserInputType.Touch and input ~= current then
+				return
+			end
 			update(input.Position)
 		end
 	end))
 	table.insert(list, UserInputService.InputEnded:Connect(function(input)
-		if active and isPress(input) then
-			active = false
-			self:LockScroll(false)
-			if onEnd then
-				self:Safe(onEnd)
-			end
+		if state == "idle" or not isPress(input) or not matches(input) then
+			return
+		end
+		local wasTap = state == "pending"
+		if wasTap then
+			update(input.Position)
+		end
+		release()
+		if onEnd then
+			self:Safe(onEnd)
 		end
 	end))
+	table.insert(list, frame.Destroying:Connect(release))
+	for _, connection in ipairs(list) do
+		table.insert(self.Connections, connection)
+	end
 	return list
 end
 
@@ -911,8 +1470,42 @@ function Spectra:ClosePopup()
 	end
 end
 
+function Spectra:CloseColorPickers(except)
+	local open = {}
+	for picker in pairs(self.OpenColorPickers) do
+		if picker ~= except then
+			table.insert(open, picker)
+		end
+	end
+	for _, picker in ipairs(open) do
+		picker:Close()
+	end
+end
+
+function Spectra:CloseOverlays()
+	self:ClosePopup()
+	self:CloseColorPickers()
+end
+
+function Spectra:PlaceNear(frame, anchor, size, alignRight)
+	local scale = self.Theme.Scale
+	local ap, as = anchor.AbsolutePosition, anchor.AbsoluteSize
+	local screen = self.Gui.AbsoluteSize
+	local w, h = size.X * scale, size.Y * scale
+	local x = alignRight and (ap.X + as.X - w) or ap.X
+	x = math.clamp(x, 8, math.max(8, screen.X - w - 8))
+	local y = ap.Y + as.Y + 4
+	if y + h > screen.Y - 8 then
+		local above = ap.Y - h - 4
+		y = above >= 8 and above or math.max(8, screen.Y - h - 8)
+	end
+	y = math.clamp(y, 8, math.max(8, screen.Y - h - 8))
+	frame.Position = UDim2.fromOffset(x, y)
+end
+
 function Spectra:OpenPopup(frame, anchor, size, onClose)
 	self:ClosePopup()
+	self:CloseColorPickers()
 	frame.Size = UDim2.fromOffset(size.X, size.Y)
 	frame.Parent = self.PopupLayer
 	self:Scaled(frame)
@@ -940,7 +1533,7 @@ function Spectra:ShowList(anchor, items, opts)
 	local listH = math.max(itemH, visibleCount * (itemH + 2) + 6)
 	local width = math.max(anchor.AbsoluteSize.X / self.Theme.Scale, opts.MinWidth or 140)
 	local frame = new("Frame", { BackgroundColor3 = self.Theme.Surface, BorderSizePixel = 0, ClipsDescendants = true })
-	self:Themed(frame, "BackgroundColor3", "Surface")
+	self:Layer(frame, "Surface", "Popup")
 	self:Corner(frame, 7)
 	self:Stroke(frame)
 
@@ -979,7 +1572,8 @@ function Spectra:ShowList(anchor, items, opts)
 	local function refreshSelection()
 		for _, entry in ipairs(buttons) do
 			local selected = opts.IsSelected and opts.IsSelected(entry.Item) or false
-			entry.Button.BackgroundColor3 = selected and self.Theme.Element or self.Theme.Surface
+			entry.Button.BackgroundColor3 = self.Theme.Element
+			entry.Button.BackgroundTransparency = selected and 0 or 1
 			entry.Label.TextColor3 = selected and self.Theme.Text or self.Theme.Muted
 			entry.Check.Visible = selected
 		end
@@ -1008,6 +1602,7 @@ function Spectra:ShowList(anchor, items, opts)
 		table.insert(buttons, { Button = button, Label = label, Check = check, Item = item })
 		button.MouseEnter:Connect(function()
 			button.BackgroundColor3 = self.Theme.Hover
+			button.BackgroundTransparency = 0
 		end)
 		button.MouseLeave:Connect(function()
 			refreshSelection()
@@ -1345,10 +1940,19 @@ local function buildRow(self, info, height)
 		Name = "Row", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = self.Order,
 	}, self.Holder)
-	new("UIListLayout", { Padding = UDim.new(0, 3), SortOrder = Enum.SortOrder.LayoutOrder }, row)
+	local rowLayout = new("UIListLayout", { Padding = UDim.new(0, 3), SortOrder = Enum.SortOrder.LayoutOrder }, row)
+	lib:Fit(rowLayout, "Padding", function(M)
+		return UDim.new(0, M.Mode == "Compact" and 2 or 4)
+	end)
 	local top = new("Frame", {
-		Name = "Top", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, height), LayoutOrder = 1,
+		Name = "Top", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, type(height) == "number" and height or 0),
+		LayoutOrder = 1,
 	}, row)
+	if type(height) == "function" then
+		lib:Fit(top, "Size", function(M)
+			return UDim2.new(1, 0, 0, height(M))
+		end)
+	end
 	local desc
 	if info.Description and info.Description ~= "" then
 		desc = lib:Text(row, info.Description, 10, "Muted", 1)
@@ -1422,7 +2026,9 @@ function Container:AddLabel(a, b)
 		info = { Text = a, DoesWrap = b == true }
 	end
 	local lib = self.Lib
-	local row, top, desc = buildRow(self, info, lib.M.Row - 6)
+	local row, top, desc = buildRow(self, info, function(M)
+		return M.Row - 6
+	end)
 	local el = newElement(self, "Label", idx, info, row, top)
 	el.DescLabel = desc
 	local inset = 0
@@ -1492,7 +2098,7 @@ local function makeButton(group, info, parentEl)
 	lib:Corner(button, 6)
 	lib:Stroke(button)
 	lib:Bind(function()
-		button.BackgroundColor3 = lib.Theme.Element
+		lib:Paint(button, "Element")
 	end, button)
 
 	local content = new("Frame", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1) }, button)
@@ -1624,6 +2230,9 @@ function Container:AddButton(a, b, c)
 		FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	}, row)
+	lib:Fit(row, "Size", function(M)
+		return UDim2.new(1, 0, 0, M.Button)
+	end)
 	local group = { Lib = lib, Container = self, Row = row, Buttons = {} }
 	local btn = makeButton(group, info)
 	btn.Row = row
@@ -1633,7 +2242,9 @@ end
 function Container:AddToggle(idx, info)
 	info = info or {}
 	local lib = self.Lib
-	local row, top, desc = buildRow(self, info, lib.M.Row)
+	local row, top, desc = buildRow(self, info, function(M)
+		return M.Row
+	end)
 	local el = newElement(self, "Toggle", idx, info, row, top)
 	el.DescLabel = desc
 	el.Value = info.Default == true
@@ -1741,7 +2352,9 @@ function Container:AddCheckbox(idx, info)
 		el.Value = multi and {} or nil
 		if info.Text then
 			local head = lib:Text(row, info.Text, 11, "Text", 2)
-			head.Size = UDim2.new(1, 0, 0, lib.M.Row - 8)
+			lib:Fit(head, "Size", function(M)
+				return UDim2.new(1, 0, 0, M.Row - 8)
+			end)
 			head.LayoutOrder = 0
 			el.Label = head
 		end
@@ -1761,6 +2374,9 @@ function Container:AddCheckbox(idx, info)
 			local item = new("TextButton", {
 				BackgroundTransparency = 1, Text = "", Size = UDim2.new(1, 0, 0, lib.M.Row - 4), LayoutOrder = i,
 			}, row)
+			lib:Fit(item, "Size", function(M)
+				return UDim2.new(1, 0, 0, M.Row - 4)
+			end)
 			local box, apply = buildBox(lib, item)
 			box.AnchorPoint = Vector2.new(0, 0.5)
 			box.Position = UDim2.new(0, 0, 0.5, 0)
@@ -1817,7 +2433,9 @@ function Container:AddCheckbox(idx, info)
 		return el
 	end
 
-	local row, top, desc = buildRow(self, info, lib.M.Row)
+	local row, top, desc = buildRow(self, info, function(M)
+		return M.Row
+	end)
 	local el = newElement(self, "Checkbox", idx, info, row, top)
 	el.DescLabel = desc
 	el.Value = info.Default == true
@@ -1943,6 +2561,9 @@ function Container:AddSlider(idx, info)
 	local track = new("Frame", {
 		Name = "Track", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, lib.M.SliderHit), LayoutOrder = 2,
 	}, row)
+	lib:Fit(track, "Size", function(M)
+		return UDim2.new(1, 0, 0, M.SliderHit)
+	end)
 	local bar = new("Frame", {
 		AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0),
 		Size = UDim2.new(1, 0, 0, 6), BorderSizePixel = 0,
@@ -2024,7 +2645,7 @@ function Container:AddSlider(idx, info)
 		if not el.Disabled then
 			el:SetValue(el.Min + (el.Max - el.Min) * ax)
 		end
-	end)) do
+	end, nil, { Axis = "X" })) do
 		table.insert(el.Connections, c)
 	end
 	if info.FireOnInit then
@@ -2051,10 +2672,13 @@ function Container:AddInput(idx, info)
 		TextXAlignment = Enum.TextXAlignment.Left, ClipsDescendants = true,
 	}, row)
 	new("UIPadding", { PaddingLeft = UDim.new(0, 9), PaddingRight = UDim.new(0, 9) }, box)
+	lib:Fit(box, "Size", function(M)
+		return UDim2.new(1, 0, 0, M.Input)
+	end)
 	lib:Corner(box, 6)
 	local stroke = lib:Stroke(box)
 	lib:Bind(function()
-		box.BackgroundColor3 = lib.Theme.Element
+		lib:Paint(box, "Element")
 		box.TextColor3 = lib.Theme.Text
 		box.PlaceholderColor3 = lib.Theme.Muted
 		box.Font = lib:GetFont(1)
@@ -2172,9 +2796,12 @@ function Container:AddDropdown(idx, info)
 	lib:Corner(button, 6)
 	lib:Stroke(button)
 	lib:Bind(function()
-		button.BackgroundColor3 = lib.Theme.Element
+		lib:Paint(button, "Element")
 	end, button)
 	onRowHover(lib, button, button, "Element", "Hover")
+	lib:Fit(button, "Size", function(M)
+		return UDim2.new(1, 0, 0, M.Input)
+	end)
 	local valueX = 9
 	if info.Icon and not info.Text then
 		local icon = lib:Icon(button, info.Icon, 14, "Muted")
@@ -2406,15 +3033,15 @@ function Spectra:CreateBox(parent, opts)
 		Name = opts.Name or "Box", BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = opts.Order or 0,
 	}, parent)
-	self:Themed(frame, "BackgroundColor3", style)
+	self:Layer(frame, style, style, true)
 	self:Corner(frame, style == "Surface" and 9 or 7)
-	self:Stroke(frame, style == "Surface" and "Border" or "Border")
+	self:Stroke(frame, "Border")
 	new("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder }, frame)
 
 	local hasHeader = opts.Title ~= nil and opts.Title ~= ""
 	local box = { Frame = frame }
 	if hasHeader then
-		local headerH = opts.Description and 40 or 30
+		local headerH = opts.Description and self.M.HeaderDesc or self.M.Header
 		local header = new("TextButton", {
 			Name = "Header", BackgroundTransparency = 1, Text = "", AutoButtonColor = false,
 			Size = UDim2.new(1, 0, 0, headerH), LayoutOrder = 1, Active = opts.Collapsible == true,
@@ -2422,13 +3049,18 @@ function Spectra:CreateBox(parent, opts)
 		local x = 12
 		if opts.Icon then
 			local icon = self:Icon(header, opts.Icon, 14, "Muted")
-			icon.Position = UDim2.new(0, 12, 0, opts.Description and 8 or 8)
+			if opts.Description then
+				icon.Position = UDim2.new(0, 12, 0, 8)
+			else
+				icon.AnchorPoint = Vector2.new(0, 0.5)
+				icon.Position = UDim2.new(0, 12, 0.5, 0)
+			end
 			x = 32
 			box.IconHolder = icon
 		end
-		local title = self:Text(header, opts.Title, 12, "Text", 3)
+		local title = self:Text(header, opts.Title, 12, "TitleColor", 3)
 		title.Position = UDim2.fromOffset(x, opts.Description and 5 or 0)
-		title.Size = UDim2.new(1, -(x + 30), 0, opts.Description and 18 or headerH)
+		title.Size = UDim2.new(1, -(x + 30), opts.Description and 0 or 1, opts.Description and 18 or 0)
 		box.Title = title
 		if opts.Description then
 			local d = self:Text(header, opts.Description, 10, "Muted", 1)
@@ -2441,7 +3073,7 @@ function Spectra:CreateBox(parent, opts)
 		if opts.Collapsible then
 			chevron = self:Icon(header, "chevron-down", 14, "Muted")
 			chevron.AnchorPoint = Vector2.new(0.5, 0.5)
-			chevron.Position = UDim2.new(1, -18, 0, headerH / 2)
+			chevron.Position = UDim2.new(1, -18, 0.5, 0)
 		end
 		local lineHolder = new("Frame", {
 			BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 1), LayoutOrder = 2,
@@ -2449,6 +3081,15 @@ function Spectra:CreateBox(parent, opts)
 		local line = new("Frame", {
 			Position = UDim2.fromOffset(self.M.Pad, 0), Size = UDim2.new(1, -2 * self.M.Pad, 0, 1), BorderSizePixel = 0,
 		}, lineHolder)
+		self:Fit(line, "Position", function(M)
+			return UDim2.fromOffset(M.Pad, 0)
+		end)
+		self:Fit(line, "Size", function(M)
+			return UDim2.new(1, -2 * M.Pad, 0, 1)
+		end)
+		self:Fit(header, "Size", function(M)
+			return UDim2.new(1, 0, 0, opts.Description and M.HeaderDesc or M.Header)
+		end)
 		self:Themed(line, "BackgroundColor3", "Border")
 		box.Header = header
 		box.HeaderLine = lineHolder
@@ -2470,12 +3111,14 @@ function Spectra:CreateBox(parent, opts)
 			AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = 3,
 		}, frame)
 	end
-	local pad = self.M.Pad
-	new("UIPadding", {
-		PaddingTop = UDim.new(0, hasHeader and 8 or pad), PaddingBottom = UDim.new(0, pad),
-		PaddingLeft = UDim.new(0, pad), PaddingRight = UDim.new(0, pad),
-	}, body)
-	new("UIListLayout", { Padding = UDim.new(0, math.max(6, self.M.Gap - 1)), SortOrder = Enum.SortOrder.LayoutOrder }, body)
+	local bodyPadding = new("UIPadding", {}, body)
+	self:FitPadding(bodyPadding, function(M)
+		return { hasHeader and 8 or M.Pad, M.Pad, M.Pad, M.Pad }
+	end)
+	local bodyLayout = new("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder }, body)
+	self:Fit(bodyLayout, "Padding", function(M)
+		return UDim.new(0, math.max(5, M.Gap - 1))
+	end)
 	box.Body = body
 
 	local collapsed = false
@@ -2759,7 +3402,7 @@ function Element:AddColorPicker(idx, info)
 			Name = "ColorWindow", Size = UDim2.fromOffset(defaultSize.X, defaultSize.Y), BorderSizePixel = 0,
 			Visible = false, Active = true, ClipsDescendants = true,
 		}, lib.FloatLayer)
-		lib:Themed(win, "BackgroundColor3", "Surface")
+		lib:Layer(win, "Surface", "Popup")
 		lib:Corner(win, 10)
 		lib:Stroke(win)
 		lib:Scaled(win)
@@ -2841,7 +3484,7 @@ function Element:AddColorPicker(idx, info)
 			for _, c in ipairs(lib:TrackDrag(alphaBase, function(ax)
 				picker.Transparency = round(ax, 2)
 				apply()
-			end)) do
+			end, nil, { Immediate = true })) do
 				table.insert(picker.Connections, c)
 			end
 		end
@@ -2860,7 +3503,7 @@ function Element:AddColorPicker(idx, info)
 			lib:Corner(box, 6)
 			lib:Stroke(box)
 			lib:Bind(function()
-				box.BackgroundColor3 = lib.Theme.Element
+				lib:Paint(box, "Element")
 				box.TextColor3 = lib.Theme.Text
 				box.PlaceholderColor3 = lib.Theme.Muted
 				box.Font = lib:GetFont(1)
@@ -2909,7 +3552,7 @@ function Element:AddColorPicker(idx, info)
 			lib:Corner(b, 6)
 			lib:Stroke(b)
 			lib:Bind(function()
-				b.BackgroundColor3 = lib.Theme.Element
+				lib:Paint(b, "Element")
 				b.TextColor3 = lib.Theme.Text
 				b.Font = lib:GetFont(2)
 			end, b)
@@ -2928,13 +3571,13 @@ function Element:AddColorPicker(idx, info)
 			picker.Sat = ax
 			picker.Vib = 1 - ay
 			apply()
-		end)) do
+		end, nil, { Immediate = true })) do
 			table.insert(picker.Connections, c)
 		end
 		for _, c in ipairs(lib:TrackDrag(hueBar, function(ax)
 			picker.Hue = math.clamp(ax, 0, 0.9999)
 			apply()
-		end)) do
+		end, nil, { Immediate = true })) do
 			table.insert(picker.Connections, c)
 		end
 
@@ -2946,7 +3589,9 @@ function Element:AddColorPicker(idx, info)
 			local gripIcon = lib:Icon(grip, "arrow-down-right", 12, "Muted")
 			gripIcon.AnchorPoint = Vector2.new(0.5, 0.5)
 			gripIcon.Position = UDim2.fromScale(0.5, 0.5)
-			table.insert(picker.DragLists, lib:MakeResizable(grip, win, Vector2.new(210, picker.HasAlpha and 290 or 270), Vector2.new(480, 560)))
+			table.insert(picker.DragLists, lib:MakeResizable(grip, win, Vector2.new(210, picker.HasAlpha and 290 or 270), Vector2.new(480, 560), function()
+				picker.UserSized = true
+			end))
 		end
 		refreshWindow()
 	end
@@ -2956,11 +3601,18 @@ function Element:AddColorPicker(idx, info)
 			return
 		end
 		lib:ClosePopup()
+		lib:CloseColorPickers(self)
 		if not win then
 			build()
-			local ap = swatch.AbsolutePosition
-			win.Position = UDim2.fromOffset(ap.X - 200, ap.Y + 26)
 		end
+		if not picker.UserSized then
+			local scale = lib.Theme.Scale
+			local screen = lib.Gui.AbsoluteSize
+			local w = math.min(244, math.max(190, screen.X / scale - 16))
+			local h = math.min(picker.HasAlpha and 318 or 298, math.max(250, screen.Y / scale - 16))
+			win.Size = UDim2.fromOffset(w, h)
+		end
+		lib:PlaceNear(win, swatch, Vector2.new(win.Size.X.Offset, win.Size.Y.Offset), true)
 		original, originalAlpha = self.Value, self.Transparency
 		refreshWindow()
 		win.Visible = true
@@ -2968,6 +3620,9 @@ function Element:AddColorPicker(idx, info)
 		lib:ClampToScreen(win)
 		lib.OpenColorPickers[self] = true
 		self.IsOpen = true
+	end
+	function picker:ContainsPoint(point)
+		return insideRect(win and win.Visible and win or nil, point) or insideRect(swatch, point)
 	end
 	function picker:Close()
 		if win then
@@ -3778,6 +4433,9 @@ function Spectra:_KeybindAdd(picker)
 		AutoButtonColor = false, LayoutOrder = menu.Order,
 	}, menu.Holder)
 	self:Themed(entry, "BackgroundColor3", "Element")
+	self:Fit(entry, "Size", function(M)
+		return UDim2.new(1, 0, 0, M.ListItem)
+	end)
 	self:Corner(entry, 6)
 	local dot = new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 9, 0.5, 0), Size = UDim2.fromOffset(7, 7), BorderSizePixel = 0 }, entry)
 	self:Corner(dot, 8)
@@ -4094,6 +4752,9 @@ function TabClass:_GetColumns()
 		FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, lib.M.Gap), SortOrder = Enum.SortOrder.LayoutOrder,
 		VerticalAlignment = Enum.VerticalAlignment.Top,
 	}, row)
+	lib:Fit(layout, "Padding", function(M)
+		return UDim.new(0, M.Gap)
+	end)
 	self.ColumnsRow = row
 	self.ColumnsLayout = layout
 	self.ColumnFrames = {}
@@ -4103,7 +4764,10 @@ function TabClass:_GetColumns()
 			Name = "Column" .. i, BackgroundTransparency = 1, Size = UDim2.new(1 / n, -lib.M.Gap * (n - 1) / n, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = i,
 		}, row)
-		new("UIListLayout", { Padding = UDim.new(0, lib.M.Gap), SortOrder = Enum.SortOrder.LayoutOrder }, col)
+		local colLayout = new("UIListLayout", { Padding = UDim.new(0, lib.M.Gap), SortOrder = Enum.SortOrder.LayoutOrder }, col)
+		lib:Fit(colLayout, "Padding", function(M)
+			return UDim.new(0, M.Gap)
+		end)
 		self.ColumnFrames[i] = col
 	end
 	local function responsive()
@@ -4118,7 +4782,7 @@ function TabClass:_GetColumns()
 		end
 	end
 	lib:Connect(self.Page:GetPropertyChangedSignal("AbsoluteSize"), responsive)
-	responsive()
+	lib:Bind(responsive, row)
 	return self.ColumnFrames
 end
 
@@ -4189,11 +4853,14 @@ function TabClass:AddTabbox(opts)
 		Name = "Tabbox", BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
 		LayoutOrder = self.ColumnOrder, ClipsDescendants = false,
 	}, parent)
-	lib:Themed(frame, "BackgroundColor3", "Surface")
+	lib:Layer(frame, "Surface", "Surface", true)
 	lib:Corner(frame, 9)
 	lib:Stroke(frame)
 	new("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder }, frame)
 	local header = new("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 32), LayoutOrder = 1 }, frame)
+	lib:Fit(header, "Size", function(M)
+		return UDim2.new(1, 0, 0, M.Header + 2)
+	end)
 	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, SortOrder = Enum.SortOrder.LayoutOrder }, header)
 	local lineHolder = new("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 1), LayoutOrder = 2 }, frame)
 	local line = new("Frame", { Size = UDim2.new(1, 0, 1, 0), BorderSizePixel = 0 }, lineHolder)
@@ -4251,11 +4918,14 @@ function TabClass:AddTabbox(opts)
 			Name = name, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.Y, Visible = false,
 		}, bodies)
-		new("UIPadding", {
-			PaddingTop = UDim.new(0, 9), PaddingBottom = UDim.new(0, lib.M.Pad),
-			PaddingLeft = UDim.new(0, lib.M.Pad), PaddingRight = UDim.new(0, lib.M.Pad),
-		}, body)
-		new("UIListLayout", { Padding = UDim.new(0, 7), SortOrder = Enum.SortOrder.LayoutOrder }, body)
+		local tabPadding = new("UIPadding", {}, body)
+		lib:FitPadding(tabPadding, function(M)
+			return { 9, M.Pad, M.Pad, M.Pad }
+		end)
+		local tabLayout = new("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder }, body)
+		lib:Fit(tabLayout, "Padding", function(M)
+			return UDim.new(0, math.max(5, M.Gap - 1))
+		end)
 		local c = setmetatable({ Lib = lib, Holder = body, Frame = body, Order = 0, Tabbox = self, TabName = name }, Container)
 		c.Select = function()
 			self:Select(name)
@@ -4315,7 +4985,7 @@ function TabClass:Destroy()
 		lib.Tabs[self.Name] = nil
 	end
 	self.Button:Destroy()
-	self.Page:Destroy()
+	self.Host:Destroy()
 	if lib.ActiveTab == self.Name then
 		lib.ActiveTab = nil
 		if lib.TabList[1] then
@@ -4324,48 +4994,83 @@ function TabClass:Destroy()
 	end
 end
 
+function Spectra:IsNarrow()
+	if not self.Responsive or not self.Window then
+		return false
+	end
+	return self.Window.Size.X.Offset < 520
+end
+
+function Spectra:CheckResponsive()
+	local narrow = self:IsNarrow()
+	if narrow ~= self.WasNarrow then
+		self.WasNarrow = narrow
+		if self.Navigation then
+			self:LayoutShell()
+		end
+	end
+end
+
 function Spectra:GetLayoutMode()
 	local position = self.TabPosition
-	if self.Compact and self.CompactLayout == "Top" then
+	local compact = self.Compact or self:IsNarrow()
+	if compact and self.CompactLayout == "Top" then
 		position = "Top"
 	end
-	return position, position == "Left" or position == "Right", self.Compact
+	return position, position == "Left" or position == "Right", compact
 end
 
 function TabClass:_Style(animate)
 	local lib = self.Library
 	local _, vertical, compact = lib:GetLayoutMode()
+	local M = lib.M
 	local button = self.Button
 	local icon, text, marker = self.IconHolder, self.TextLabel, self.Marker
 	local hasIcon = self.Icon ~= nil and self.Icon ~= ""
 	local active = lib.ActiveTab == self.Name
 	local size
-	if vertical then
-		size = UDim2.new(1, 0, 0, lib.M.Tab)
-		if compact and hasIcon then
-			icon.AnchorPoint = Vector2.new(0.5, 0.5)
-			icon.Position = UDim2.fromScale(0.5, 0.5)
-			text.Visible = false
+	if vertical and compact then
+		local half = math.floor(M.Tab / 2)
+		size = UDim2.new(1, 0, 0, active and (M.Tab + 10) or M.Tab)
+		icon.AnchorPoint = Vector2.new(0.5, 0.5)
+		icon.Position = UDim2.new(0.5, 0, 0, half - (active and 2 or 0))
+		text.TextXAlignment = Enum.TextXAlignment.Center
+		if hasIcon then
+			lib:SetTextSize(text, 9)
+			text.Visible = active
+			text.Position = UDim2.new(0, 2, 0, M.Tab - 5)
+			text.Size = UDim2.new(1, -4, 0, 12)
 		else
-			icon.AnchorPoint = Vector2.new(0, 0.5)
-			icon.Position = UDim2.new(0, 12, 0.5, 0)
+			lib:SetTextSize(text, 10)
 			text.Visible = true
-			text.Position = UDim2.fromOffset(hasIcon and 36 or 14, 0)
-			text.Size = UDim2.new(1, -(hasIcon and 42 or 20), 1, 0)
-			text.TextXAlignment = Enum.TextXAlignment.Left
+			text.Position = UDim2.new(0, 2, 0, 0)
+			text.Size = UDim2.new(1, -4, 1, 0)
 		end
+		marker.AnchorPoint = Vector2.new(0, 0.5)
+		marker.Position = UDim2.new(0, 0, 0, half)
+		marker.Size = UDim2.fromOffset(3, 14)
+	elseif vertical then
+		size = UDim2.new(1, 0, 0, M.Tab)
+		lib:SetTextSize(text, 11)
+		icon.AnchorPoint = Vector2.new(0, 0.5)
+		icon.Position = UDim2.new(0, 12, 0.5, 0)
+		text.Visible = true
+		text.Position = UDim2.fromOffset(hasIcon and 36 or 14, 0)
+		text.Size = UDim2.new(1, -(hasIcon and 42 or 20), 1, 0)
+		text.TextXAlignment = Enum.TextXAlignment.Left
 		marker.AnchorPoint = Vector2.new(0, 0.5)
 		marker.Position = UDim2.new(0, 0, 0.5, 0)
 		marker.Size = UDim2.fromOffset(3, 14)
 	else
+		lib:SetTextSize(text, 11)
 		local textW = TextService:GetTextSize(self.Name, fs(11), lib:GetFont(2), Vector2.new(400, 30)).X
 		local showText = (not compact) or active or not hasIcon
-		local width = 24 + (hasIcon and 20 or 0) + (showText and (textW + (hasIcon and 4 or 0)) or 0)
-		size = UDim2.new(0, math.max(width, lib.M.Tab), 1, 0)
+		local width = 24 + (hasIcon and 16 or 0) + (showText and (textW + (hasIcon and 8 or 0)) or 0)
+		size = UDim2.new(0, math.max(math.ceil(width), M.Tab), 1, 0)
 		icon.AnchorPoint = Vector2.new(0, 0.5)
-		icon.Position = UDim2.new(0, 12, 0.5, 0)
+		icon.Position = showText and UDim2.new(0, 12, 0.5, 0) or UDim2.new(0.5, -8, 0.5, 0)
 		text.Visible = showText
-		text.Position = UDim2.fromOffset(hasIcon and 36 or 12, 0)
+		text.Position = UDim2.fromOffset(hasIcon and 34 or 12, 0)
 		text.Size = UDim2.new(1, -(hasIcon and 40 or 20), 1, 0)
 		text.TextXAlignment = Enum.TextXAlignment.Left
 		marker.AnchorPoint = Vector2.new(0.5, 1)
@@ -4374,7 +5079,7 @@ function TabClass:_Style(animate)
 	end
 	icon.Visible = hasIcon
 	if animate then
-		lib:Tween(button, { Size = size }, 0.16)
+		lib:Tween(button, { Size = size }, 0.2, Enum.EasingStyle.Quint)
 	else
 		button.Size = size
 	end
@@ -4401,20 +5106,28 @@ function Spectra:CreateTab(name, iconName, opts)
 	self:Corner(marker, 3)
 	tab.Button, tab.IconHolder, tab.TextLabel, tab.Marker = button, icon, text, marker
 
-	local page = new("ScrollingFrame", {
-		Name = name, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, BorderSizePixel = 0,
-		ScrollBarThickness = self.IsMobile and 3 or 2, CanvasSize = UDim2.new(),
-		AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollingDirection = Enum.ScrollingDirection.Y, Visible = false,
+	local host = new("CanvasGroup", {
+		Name = name, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false,
 	}, self.Content)
+	local page = new("ScrollingFrame", {
+		Name = "Page", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, BorderSizePixel = 0,
+		ScrollBarThickness = self.IsMobile and 3 or 2, CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollingDirection = Enum.ScrollingDirection.Y,
+		ElasticBehavior = Enum.ElasticBehavior.Never,
+	}, host)
 	self:Themed(page, "ScrollBarImageColor3", "Muted")
 	self:RegisterScroller(page)
-	local pad = self.IsMobile and 10 or 16
-	new("UIPadding", {
-		PaddingTop = UDim.new(0, pad), PaddingBottom = UDim.new(0, pad + 4),
-		PaddingLeft = UDim.new(0, pad), PaddingRight = UDim.new(0, pad + 2),
-	}, page)
-	new("UIListLayout", { Padding = UDim.new(0, self.M.Gap), SortOrder = Enum.SortOrder.LayoutOrder }, page)
+	local pagePadding = new("UIPadding", {}, page)
+	self:FitPadding(pagePadding, function(M)
+		local pad = M.Pad + (self.IsMobile and 0 or 6)
+		return { pad, pad + 4, pad, pad + 2 }
+	end)
+	local pageLayout = new("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder }, page)
+	self:Fit(pageLayout, "Padding", function(M)
+		return UDim.new(0, M.Gap)
+	end)
 	tab.Page = page
+	tab.Host = host
 
 	local function paint(active, instant)
 		local t = self.Theme
@@ -4425,8 +5138,9 @@ function Spectra:CreateTab(name, iconName, opts)
 		else
 			self:Tween(button, { BackgroundColor3 = bg })
 		end
-		text.TextColor3 = active and t.Text or t.Muted
-		self:SetIconColor(icon, active and "Text" or "Muted")
+		local fg = active and t.Text or self:Legible(t.Muted:Lerp(t.Text, 0.3), t.Sidebar, 4.5)
+		text.TextColor3 = fg
+		self:SetIconColor(icon, fg)
 		marker.Visible = active
 	end
 	tab.Paint = paint
@@ -4468,14 +5182,36 @@ function Spectra:SelectTab(target)
 	if type(selected) ~= "table" or not selected.Page then
 		return
 	end
+	local previous = self.Tabs[self.ActiveTab or ""]
 	self.ActiveTab = selected.Name
-	self:ClosePopup()
-	local _, vertical, compact = self:GetLayoutMode()
+	self:CloseOverlays()
+	local _, _, compact = self:GetLayoutMode()
+	local animate = self.Open and previous ~= nil and previous ~= selected and self.Theme.Animations
 	for _, tab in ipairs(self.TabList) do
 		local active = tab == selected
-		tab.Page.Visible = active
+		local host = tab.Host
+		if tab.Transition then
+			pcall(function()
+				tab.Transition:Cancel()
+			end)
+			tab.Transition = nil
+		end
+		if active then
+			host.Position = UDim2.new()
+			host.GroupTransparency = 0
+			host.Visible = true
+			if animate then
+				host.GroupTransparency = 1
+				host.Position = UDim2.fromOffset(0, 10)
+				tab.Transition = self:Tween(host, { GroupTransparency = 0, Position = UDim2.new() }, 0.26, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+			end
+		else
+			host.Visible = false
+			host.GroupTransparency = 0
+			host.Position = UDim2.new()
+		end
 		tab.Paint(active, false)
-		if not vertical and compact then
+		if compact then
 			tab:_Style(true)
 		end
 	end
@@ -4513,33 +5249,42 @@ local function toKeyCode(value)
 	return nil
 end
 
-function Spectra.ComputeMetrics(mobile, viewport)
+function Spectra.ComputeMetrics(mobile, viewport, density)
 	local m = {}
+	local compact = density == "Compact"
+	local k = compact and 0.86 or 1.1
+	local function s(value, minimum)
+		return math.max(minimum or 0, math.floor(value * k + 0.5))
+	end
+	m.Mode = compact and "Compact" or "Comfortable"
 	if mobile then
 		local short = math.min(viewport.X, viewport.Y)
 		local d = math.clamp(short / 430, 0.82, 1.12)
 		m.Density = d
-		m.Row = math.max(30, math.floor(34 * d + 0.5))
-		m.Button = math.max(32, math.floor(36 * d + 0.5))
-		m.Input = math.max(30, math.floor(32 * d + 0.5))
-		m.ListItem = math.max(30, math.floor(32 * d + 0.5))
-		m.SliderHit = math.max(24, math.floor(26 * d + 0.5))
-		m.Pad = math.max(8, math.floor(10 * d + 0.5))
-		m.Gap = math.max(6, math.floor(8 * d + 0.5))
-		m.Tab = math.max(36, math.floor(42 * d + 0.5))
-		m.TopBar = math.max(42, math.floor(48 * d + 0.5))
-		m.Bar = math.max(38, math.floor(42 * d + 0.5))
-		m.Side = math.floor(150 * d + 0.5)
-		m.SideCompact = math.max(44, math.floor(50 * d + 0.5))
-		m.Font = math.clamp(0.95 * d + 0.1, 0.92, 1.12)
+		m.Row = s(34 * d, 30)
+		m.Button = s(36 * d, 32)
+		m.Input = s(32 * d, 30)
+		m.ListItem = s(32 * d, 30)
+		m.SliderHit = s(26 * d, 24)
+		m.Pad = s(10 * d, 8)
+		m.Gap = s(8 * d, 6)
+		m.Tab = s(42 * d, 36)
+		m.TopBar = s(48 * d, 42)
+		m.Bar = s(42 * d, 38)
+		m.Side = s(150 * d, 120)
+		m.SideCompact = s(52 * d, 50)
+		m.Header = s(30 * d, 28)
+		m.HeaderDesc = s(40 * d, 36)
+		m.Font = math.clamp(0.95 * d + 0.1, 0.92, 1.12) * (compact and 0.96 or 1)
 	else
 		m.Density = 1
-		m.Row, m.Button, m.Input, m.ListItem = 26, 28, 26, 24
-		m.SliderHit = 16
-		m.Pad, m.Gap = 10, 8
-		m.Tab, m.TopBar, m.Bar = 34, 52, 38
-		m.Side, m.SideCompact = 164, 50
-		m.Font = 1
+		m.Row, m.Button, m.Input, m.ListItem = s(26, 22), s(28, 24), s(26, 22), s(24, 21)
+		m.SliderHit = s(16, 14)
+		m.Pad, m.Gap = s(10, 8), s(8, 6)
+		m.Tab, m.TopBar, m.Bar = s(34, 29), math.floor(52 * (compact and 0.92 or 1.04) + 0.5), s(38, 32)
+		m.Side, m.SideCompact = s(164, 140), s(56, 52)
+		m.Header, m.HeaderDesc = s(30, 26), s(40, 36)
+		m.Font = compact and 0.94 or 1
 	end
 	return m
 end
@@ -4557,6 +5302,7 @@ function Spectra:FitWindow()
 	local h = math.clamp(self.WindowSize.Y, math.min(self.MinWindowSize.Y, maxH), maxH)
 	self.Window.Size = UDim2.fromOffset(w, h)
 	self:ClampToScreen(self.Window)
+	self:CheckResponsive()
 end
 
 function Spectra:LayoutShell()
@@ -4676,24 +5422,54 @@ function Spectra:ToggleUI(state)
 		return
 	end
 	self.Open = state
-	self:ClosePopup()
-	local window, scale = self.Window, self.WindowScale
-	if state then
-		window.Visible = true
-		scale.Scale = self.Theme.Scale * 0.94
-		self:Tween(scale, { Scale = self.Theme.Scale }, 0.22)
-	else
-		for picker in pairs(self.OpenColorPickers) do
-			picker:Close()
-		end
-		self:Tween(scale, { Scale = self.Theme.Scale * 0.94 }, 0.16)
-		task.delay(0.18, function()
-			if not self.Open and window.Parent then
-				window.Visible = false
-				scale.Scale = self.Theme.Scale
-			end
+	self:CloseOverlays()
+	self.WindowToken = (self.WindowToken or 0) + 1
+	local token = self.WindowToken
+	local window, group, scale, stroke = self.Window, self.Group, self.WindowScale, self.WindowStroke
+	for _, tween in ipairs(self.WindowTweens or {}) do
+		pcall(function()
+			tween:Cancel()
 		end)
 	end
+	self.WindowTweens = {}
+	local function play(obj, props, duration, style, direction)
+		local tween = self:Tween(obj, props, duration, style, direction)
+		if tween then
+			table.insert(self.WindowTweens, tween)
+		end
+		return tween
+	end
+	local base = self.Theme.Scale
+	local animated = self.Theme.Animations and self.Theme.AnimSpeed > 0
+	local strokeRest = math.clamp(0.1 + (self.Material.StrokeShift or 0), 0, 1)
+	if state then
+		window.Visible = true
+		stroke.Transparency = strokeRest
+		if animated then
+			group.GroupTransparency = 1
+			scale.Scale = base * 0.95
+		end
+		play(group, { GroupTransparency = 0 }, 0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		play(scale, { Scale = base }, 0.32, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+	else
+		local fade = play(group, { GroupTransparency = 1 }, 0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		play(scale, { Scale = base * 0.96 }, 0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		play(stroke, { Transparency = 1 }, 0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		local function finish()
+			if token == self.WindowToken and not self.Open and window.Parent then
+				window.Visible = false
+				group.GroupTransparency = 0
+				scale.Scale = self.Theme.Scale
+				stroke.Transparency = strokeRest
+			end
+		end
+		if fade then
+			fade.Completed:Connect(finish)
+		else
+			finish()
+		end
+	end
+	self:_ApplyBlur()
 	if self.OnToggle then
 		self:Defer(self.OnToggle, state)
 	end
@@ -4725,6 +5501,12 @@ function Spectra:Destroy()
 	table.clear(self.Connections)
 	table.clear(self.Hooks)
 	self.Notifications = {}
+	if self.BlurEffect then
+		pcall(function()
+			self.BlurEffect:Destroy()
+		end)
+		self.BlurEffect = nil
+	end
 	if self.Gui then
 		self.Gui:Destroy()
 	end
@@ -4734,6 +5516,30 @@ function Spectra:Destroy()
 	end
 end
 Spectra.Unload = Spectra.Destroy
+
+local function resolveImage(value)
+	if type(value) ~= "string" or value == "" then
+		return nil
+	end
+	local asset = toAsset(value)
+	if asset then
+		return asset
+	end
+	if type(getcustomasset) == "function" and type(isfile) == "function" then
+		local ok, result = pcall(function()
+			if isfile(value) then
+				return getcustomasset(value)
+			end
+			return nil
+		end)
+		if ok and result then
+			return result
+		end
+	end
+	return nil
+end
+
+local FitTypes = { Crop = Enum.ScaleType.Crop, Fit = Enum.ScaleType.Fit, Stretch = Enum.ScaleType.Stretch }
 
 function Spectra:CreateWindow(options)
 	options = options or {}
@@ -4761,6 +5567,36 @@ function Spectra:CreateWindow(options)
 				lib.Theme[k] = v
 			end
 		end
+	end
+	do
+		local style = Styles[options.Style] and Styles[options.Style] or Styles[lib.Theme.Style] or Styles.Spectra
+		local styleName = Styles[options.Style] and options.Style or (Styles[lib.Theme.Style] and lib.Theme.Style or "Spectra")
+		if Styles[options.Style] then
+			for k, v in pairs(style.Palette) do
+				lib.Theme[k] = v
+			end
+			lib.Theme.Rounding = style.Rounding
+			lib.Theme.BackgroundBlur = style.Material.Blur or 0
+			if type(options.Theme) == "table" then
+				for k, v in pairs(options.Theme) do
+					if lib.Theme[k] ~= nil and type(lib.Theme[k]) == type(v) then
+						lib.Theme[k] = v
+					end
+				end
+			end
+		end
+		lib.Theme.Style = styleName
+		lib.Material = copyTable(style.Material)
+		if options.Density == "Compact" or options.Density == "Comfortable" then
+			lib.Theme.Density = options.Density
+		end
+		local customTitle = type(options.Theme) == "table" and options.Theme.TitleColor ~= nil
+		if customTitle then
+			lib.Theme.TitleColorAuto = false
+		elseif lib.Theme.TitleColorAuto then
+			lib.Theme.TitleColor = lib.Theme.Text
+		end
+		lib.Responsive = options.Responsive ~= false
 	end
 	lib.Connections, lib.Hooks, lib.HookId = {}, {}, 0
 	lib.Options, lib.Toggles, lib.KeyPickers = {}, {}, {}
@@ -4811,7 +5647,7 @@ function Spectra:CreateWindow(options)
 		local camera = workspace and workspace.CurrentCamera
 		viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
 	end
-	lib.M = Spectra.ComputeMetrics(lib.IsMobile, viewport)
+	lib.M = Spectra.ComputeMetrics(lib.IsMobile, viewport, lib.Theme.Density)
 	Spectra:SetFontScale(lib.M.Font)
 
 	local requested = options.Size or UDim2.fromOffset(780, 470)
@@ -4832,18 +5668,33 @@ function Spectra:CreateWindow(options)
 	lib.OverlayLayer = layer("Overlays", 5)
 	local window = new("Frame", {
 		Name = "Window", AnchorPoint = Vector2.new(0.5, 0.5), Position = options.Position or UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(lib.WindowSize.X, lib.WindowSize.Y), BorderSizePixel = 0, Active = true,
-		ZIndex = 10, ClipsDescendants = false, Visible = options.AutoShow ~= false,
+		Size = UDim2.fromOffset(lib.WindowSize.X, lib.WindowSize.Y), BackgroundTransparency = 1, BorderSizePixel = 0,
+		Active = true, ZIndex = 10, ClipsDescendants = false, Visible = options.AutoShow ~= false,
 	}, gui)
 	lib.Window = window
-	lib:Bind(function()
-		window.BackgroundColor3 = lib.Theme.Sidebar
-		window.BackgroundTransparency = lib.Theme.Transparency
-	end, window)
 	lib:Corner(window, 10)
-	lib:Stroke(window, "Border", 0.1)
+	lib.WindowStroke = lib:Stroke(window, "Border", 0.1)
 	lib.WindowScale = lib:Scaled(window)
+	local group = new("CanvasGroup", { Name = "Group", Size = UDim2.fromScale(1, 1), BorderSizePixel = 0 }, window)
+	lib.Group = group
+	lib:Corner(group, 10)
+	lib:Layer(group, "Sidebar", "Window", true)
 	lib.Open = options.AutoShow ~= false
+	local backdropImage = new("ImageLabel", {
+		Name = "BackgroundImage", BackgroundTransparency = 1, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1),
+		ZIndex = 0, Visible = false, Image = "",
+	}, group)
+	lib:Corner(backdropImage, 10)
+	lib.BackgroundImageLabel = backdropImage
+	lib:Bind(function()
+		local id = resolveImage(lib.Theme.BackgroundImage)
+		backdropImage.Visible = id ~= nil
+		if id then
+			backdropImage.Image = id
+			backdropImage.ScaleType = FitTypes[lib.Theme.BackgroundImageFit] or Enum.ScaleType.Crop
+			backdropImage.ImageTransparency = lib.Theme.BackgroundImageAlpha
+		end
+	end, backdropImage)
 
 	lib.ToggleLayer = layer("ToggleButton", 30)
 	lib.FloatLayer = layer("Floating", 50)
@@ -4869,7 +5720,7 @@ function Spectra:CreateWindow(options)
 	}, lib.NotifyLayer)
 
 	local TB = lib.M.TopBar
-	local topbar = new("Frame", { Name = "Topbar", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, TB) }, window)
+	local topbar = new("Frame", { Name = "Topbar", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, TB) }, group)
 	lib.Topbar = topbar
 	local logoSize = math.clamp(TB - 22, 24, 34)
 	local logo = new("ImageLabel", {
@@ -4879,7 +5730,7 @@ function Spectra:CreateWindow(options)
 	lib.LogoImage = logo
 	local tx = lib.M.Pad + 4 + logoSize + 10
 	local ty = (TB - 34) / 2
-	local title = lib:Text(topbar, lib.Name, 14, "Text", 3)
+	local title = lib:Text(topbar, lib.Name, 14, "TitleColor", 3)
 	title.Position = UDim2.fromOffset(tx, ty)
 	title.Size = UDim2.new(1, -(tx + 52), 0, 18)
 	title.TextTruncate = Enum.TextTruncate.AtEnd
@@ -4912,9 +5763,25 @@ function Spectra:CreateWindow(options)
 	close.Activated:Connect(function()
 		lib:ToggleUI(false)
 	end)
+	lib:Bind(function()
+		local tb = lib.M.TopBar
+		topbar.Size = UDim2.new(1, 0, 0, tb)
+		local ls = math.clamp(tb - 22, 24, 34)
+		logo.Size = UDim2.fromOffset(ls, ls)
+		logo.Position = UDim2.fromOffset(lib.M.Pad + 4, math.floor((tb - ls) / 2))
+		local x = lib.M.Pad + 4 + ls + 10
+		local y = math.floor((tb - 34) / 2)
+		title.Position = UDim2.fromOffset(x, y)
+		title.Size = UDim2.new(1, -(x + 52), 0, 18)
+		subtitle.Position = UDim2.fromOffset(x, y + 18)
+		subtitle.Size = UDim2.new(1, -(x + 52), 0, 14)
+		local cs = math.clamp(math.floor(tb * 0.56), 26, 34)
+		close.Size = UDim2.fromOffset(cs, cs)
+		close.Position = UDim2.new(1, -(lib.M.Pad + 2), 0, tb / 2)
+	end, topbar)
 	lib:MakeDraggable(topbar, window)
 
-	local sidebar = new("Frame", { Name = "Sidebar", BackgroundTransparency = 1 }, window)
+	local sidebar = new("Frame", { Name = "Sidebar", BackgroundTransparency = 1 }, group)
 	lib.Sidebar = sidebar
 	local nav = new("ScrollingFrame", {
 		Name = "Navigation", BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 0,
@@ -4923,24 +5790,22 @@ function Spectra:CreateWindow(options)
 	lib:RegisterScroller(nav)
 	lib.NavLayout = new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }, nav)
 
-	local content = new("Frame", { Name = "Content", BorderSizePixel = 0, ClipsDescendants = true }, window)
+	local content = new("Frame", { Name = "Content", BorderSizePixel = 0, ClipsDescendants = true }, group)
 	lib.Content = content
 	lib:Corner(content, 8)
-	lib:Bind(function()
-		content.BackgroundColor3 = lib.Theme.Background
-		content.BackgroundTransparency = lib.Theme.Transparency
-	end, content)
+	lib:Layer(content, "Background", "Content")
 
 	if options.Resizable ~= false then
 		local grip = new("TextButton", {
 			AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -2, 1, -2), Size = UDim2.fromOffset(18, 18),
 			BackgroundTransparency = 1, Text = "", AutoButtonColor = false, ZIndex = 20,
-		}, window)
+		}, group)
 		local gripIcon = lib:Icon(grip, "arrow-down-right", 12, "Muted")
 		gripIcon.AnchorPoint = Vector2.new(0.5, 0.5)
 		gripIcon.Position = UDim2.fromScale(0.5, 0.5)
 		lib:MakeResizable(grip, window, lib.MinWindowSize, Vector2.new(2000, 1400), function(v)
 			lib.WindowSize = v
+			lib:CheckResponsive()
 		end)
 	end
 
@@ -4953,8 +5818,24 @@ function Spectra:CreateWindow(options)
 		end
 	end)
 	lib:Bind(function()
+		lib:LayoutShell()
 		lib:FitWindow()
 	end, window)
+	lib:Connect(UserInputService.InputBegan, function(input)
+		if not isPress(input) or next(lib.OpenColorPickers) == nil then
+			return
+		end
+		local point = lib:GuiPoint(input.Position)
+		local outside = {}
+		for picker in pairs(lib.OpenColorPickers) do
+			if not picker:ContainsPoint(point) then
+				table.insert(outside, picker)
+			end
+		end
+		for _, picker in ipairs(outside) do
+			picker:Close()
+		end
+	end)
 
 	lib:Connect(UserInputService.InputBegan, function(input, processed)
 		if processed or not lib.ToggleKey or lib.CapturingKey or tick() - lib.LastCapture < 0.2 then
@@ -4969,6 +5850,8 @@ function Spectra:CreateWindow(options)
 		lib:CreateToggleButton(lib.ToggleButtonOptions)
 	end
 	lib:CreateKeybindMenu({ Visible = options.KeybindMenu == true })
+	lib:_ApplyBlur()
+	IconManager:Prepare()
 	if options.SilentStart ~= true then
 		lib:Notify(lib.Name, "Interface initialized successfully.", 2.5)
 	end
@@ -5053,6 +5936,24 @@ function Spectra:BuildSettings(target, opts)
 			if value then
 				lib:SetCompactLayout(value)
 			end
+		end,
+	})
+	gb:AddDropdown("Spectra_Density", {
+		Text = "Density", Icon = "rows-3", Values = Spectra.Densities, Default = lib.Theme.Density,
+		Description = "Compact: tighter controls. Comfortable: roomier spacing.",
+		Callback = function(value)
+			if value then
+				lib:SetDensity(value)
+			end
+		end,
+	})
+	gb:AddToggle("Spectra_Responsive", {
+		Text = "Auto-compact small windows", Icon = "minimize-2", Default = lib.Responsive,
+		Callback = function(value)
+			lib.Responsive = value
+			lib.WasNarrow = nil
+			lib:CheckResponsive()
+			lib:LayoutShell()
 		end,
 	})
 	gb:AddButton({
