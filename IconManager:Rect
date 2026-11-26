@@ -324,12 +324,27 @@ function IconManager:Has(name)
 end
 
 function IconManager:Rect(col, row)
-	local sheet, scale = self.Sheet, self.Scale
-	local size = math.max(1, math.floor(self.Size * scale + 0.5))
-	local maxX = math.max(0, math.floor(sheet.Width * scale + 0.5) - size)
-	local maxY = math.max(0, math.floor(sheet.Height * scale + 0.5) - size)
-	local x = math.clamp(math.floor((col * self.Cell + sheet.OffsetX) * scale + 0.5), 0, maxX)
-	local y = math.clamp(math.floor((row * self.Cell + sheet.OffsetY) * scale + 0.5), 0, maxY)
+	local sheet = self.Sheet
+	local cell = self.Cell
+	local iconSize = self.Size
+	local scale = self.Scale or 1
+
+	local baseW = sheet.Width > 0 and sheet.Width or (40 * cell)
+	local baseH = sheet.Height > 0 and sheet.Height or (40 * cell)
+
+	local maxW = math.max(1, math.floor(baseW * scale + 0.5))
+	local maxH = math.max(1, math.floor(baseH * scale + 0.5))
+
+	local size = math.clamp(math.floor(iconSize * scale + 0.5), 1, math.min(maxW, maxH))
+	local maxX = math.max(0, maxW - size)
+	local maxY = math.max(0, maxH - size)
+
+	local rawX = (col * cell + (sheet.OffsetX or 0)) * scale
+	local rawY = (row * cell + (sheet.OffsetY or 0)) * scale
+
+	local x = math.clamp(math.floor(rawX + 0.5), 0, maxX)
+	local y = math.clamp(math.floor(rawY + 0.5), 0, maxY)
+
 	return Vector2.new(x, y), Vector2.new(size, size)
 end
 
@@ -406,7 +421,10 @@ function IconManager:_Process()
 		return "Asset"
 	end
 	local size = editable.Size
-	self.Scale = size.X / self.Sheet.Width
+	local computedScale = (self.Sheet.Width and self.Sheet.Width > 0) and (size.X / self.Sheet.Width) or 1
+	if math.abs(computedScale - 1) < 0.01 then
+		computedScale = 1
+	end
 	local read, pixels = pcall(function()
 		return editable:ReadPixelsBuffer(Vector2.zero, size)
 	end)
@@ -430,6 +448,7 @@ function IconManager:_Process()
 	self.Luma = sum / count
 	if self.Luma >= 0.85 then
 		pcall(editable.Destroy, editable)
+		self.Scale = computedScale
 		return "Asset"
 	end
 	for i = 0, total - 1 do
@@ -448,6 +467,7 @@ function IconManager:_Process()
 		pcall(editable.Destroy, editable)
 		return "Asset"
 	end
+	self.Scale = computedScale
 	self.Content = Content.fromObject(editable)
 	self.Editable = editable
 	return "Editable"
@@ -552,7 +572,8 @@ Spectra.Icons = IconManager.Catalog
 local FontScale = 1
 
 local function fs(size)
-	return math.max(9, math.floor(size * FontScale + 1.5))
+	local base = tonumber(size) or 12
+	return math.max(9, math.floor(base * FontScale + 0.5))
 end
 
 local function new(class, props, parent)
@@ -845,7 +866,7 @@ function Spectra:_Reconcile(changed)
 	end
 	if changed.Density and self.M then
 		self.M = Spectra.ComputeMetrics(self.IsMobile, self:GetViewport(), theme.Density)
-		Spectra:SetFontScale(self.M.Font)
+		self:SetFontScale(self.M.Font)
 	end
 end
 
@@ -5088,7 +5109,7 @@ function Spectra:CreateTab(name, iconName, opts)
 	self:Corner(marker, 3)
 	tab.Button, tab.IconHolder, tab.TextLabel, tab.Marker = button, icon, text, marker
 
-	local host = new("CanvasGroup", {
+	local host = new(self.IsMobile and "CanvasGroup" or "Frame", {
 		Name = name, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false,
 	}, self.Content)
 	local page = new("ScrollingFrame", {
@@ -5180,16 +5201,24 @@ function Spectra:SelectTab(target)
 		end
 		if active then
 			host.Position = UDim2.new()
-			host.GroupTransparency = 0
+			if host:IsA("CanvasGroup") then
+				host.GroupTransparency = 0
+			end
 			host.Visible = true
 			if animate then
-				host.GroupTransparency = 1
 				host.Position = UDim2.fromOffset(0, 10)
-				tab.Transition = self:Tween(host, { GroupTransparency = 0, Position = UDim2.new() }, 0.26, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+				if host:IsA("CanvasGroup") then
+					host.GroupTransparency = 1
+					tab.Transition = self:Tween(host, { GroupTransparency = 0, Position = UDim2.new() }, 0.26, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+				else
+					tab.Transition = self:Tween(host, { Position = UDim2.new() }, 0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+				end
 			end
 		else
 			host.Visible = false
-			host.GroupTransparency = 0
+			if host:IsA("CanvasGroup") then
+				host.GroupTransparency = 0
+			end
 			host.Position = UDim2.new()
 		end
 		tab.Paint(active, false)
@@ -5234,7 +5263,7 @@ end
 function Spectra.ComputeMetrics(mobile, viewport, density)
 	local m = {}
 	local compact = density == "Compact"
-	local k = compact and (mobile and 0.86 or 0.98) or (mobile and 1.1 or 1.14)
+	local k = compact and (mobile and 0.86 or 0.96) or (mobile and 1.1 or 1.04)
 	local function s(value, minimum)
 		return math.max(minimum or 0, math.floor(value * k + 0.5))
 	end
@@ -5259,15 +5288,13 @@ function Spectra.ComputeMetrics(mobile, viewport, density)
 		m.HeaderDesc = s(40 * d, 36)
 		m.Font = math.clamp(0.95 * d + 0.1, 0.92, 1.12) * (compact and 0.96 or 1)
 	else
-		local resolution = math.clamp(math.min(viewport.X / 1600, viewport.Y / 900), 0.92, 1.08)
-		k = (compact and 0.98 or 1.10) * resolution
-		m.Density = resolution
-		m.Row, m.Button, m.Input, m.ListItem = s(27, 23), s(29, 25), s(27, 23), s(25, 22)
+		m.Density = 1
+		m.Row, m.Button, m.Input, m.ListItem = s(27, 24), s(29, 26), s(27, 24), s(25, 22)
 		m.SliderHit = s(19, 16)
 		m.Pad, m.Gap = s(10, 8), s(8, 6)
-		m.Tab, m.TopBar, m.Bar = s(35, 30), math.floor(52 * (compact and 0.94 or 1.06) * resolution + 0.5), s(39, 33)
-		m.Side, m.SideCompact = s(166, 142), s(58, 52)
-		m.Header, m.HeaderDesc = s(31, 27), s(41, 37)
+		m.Tab, m.TopBar, m.Bar = s(35, 30), s(48, 44), s(39, 34)
+		m.Side, m.SideCompact = s(166, 144), s(58, 52)
+		m.Header, m.HeaderDesc = s(31, 28), s(41, 38)
 		m.Font = 1
 	end
 	return m
@@ -5426,29 +5453,37 @@ function Spectra:ToggleUI(state)
 	local base = self.Theme.Scale
 	local animated = self.Theme.Animations and self.Theme.AnimSpeed > 0
 	local strokeRest = math.clamp(0.1 + (self.Material.StrokeShift or 0), 0, 1)
+	local isCanvas = group:IsA("CanvasGroup")
 	if state then
 		window.Visible = true
 		stroke.Transparency = strokeRest
 		if animated then
-			group.GroupTransparency = 1
+			if isCanvas then
+				group.GroupTransparency = 1
+			end
 			scale.Scale = base * 0.95
 		end
-		play(group, { GroupTransparency = 0 }, 0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		if isCanvas then
+			play(group, { GroupTransparency = 0 }, 0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		end
 		play(scale, { Scale = base }, 0.32, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 	else
-		local fade = play(group, { GroupTransparency = 1 }, 0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-		play(scale, { Scale = base * 0.96 }, 0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		local fade = isCanvas and play(group, { GroupTransparency = 1 }, 0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.In) or nil
+		local scaleTween = play(scale, { Scale = base * 0.96 }, 0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		play(stroke, { Transparency = 1 }, 0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		local doneTween = fade or scaleTween
 		local function finish()
 			if token == self.WindowToken and not self.Open and window.Parent then
 				window.Visible = false
-				group.GroupTransparency = 0
+				if isCanvas then
+					group.GroupTransparency = 0
+				end
 				scale.Scale = self.Theme.Scale
 				stroke.Transparency = strokeRest
 			end
 		end
-		if fade then
-			fade.Completed:Connect(finish)
+		if doneTween then
+			doneTween.Completed:Connect(finish)
 		else
 			finish()
 		end
@@ -5632,7 +5667,7 @@ function Spectra:CreateWindow(options)
 		viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
 	end
 	lib.M = Spectra.ComputeMetrics(lib.IsMobile, viewport, lib.Theme.Density)
-	Spectra:SetFontScale(lib.M.Font)
+	lib:SetFontScale(lib.M.Font)
 
 	local requested = options.Size or UDim2.fromOffset(780, 470)
 	if lib.IsMobile then
@@ -5659,7 +5694,7 @@ function Spectra:CreateWindow(options)
 	lib:Corner(window, 10)
 	lib.WindowStroke = lib:Stroke(window, "Border", 0.1)
 	lib.WindowScale = lib:Scaled(window)
-	local group = new("CanvasGroup", { Name = "Group", Size = UDim2.fromScale(1, 1), BorderSizePixel = 0 }, window)
+	local group = new(lib.IsMobile and "CanvasGroup" or "Frame", { Name = "Group", Size = UDim2.fromScale(1, 1), BorderSizePixel = 0 }, window)
 	lib.Group = group
 	lib:Corner(group, 10)
 	lib:Layer(group, "Sidebar", "Window", true)
@@ -5708,12 +5743,12 @@ function Spectra:CreateWindow(options)
 	lib.Topbar = topbar
 	local logoSize = math.clamp(TB - 22, 24, 34)
 	local logo = new("ImageLabel", {
-		Position = UDim2.fromOffset(lib.M.Pad + 4, (TB - logoSize) / 2), Size = UDim2.fromOffset(logoSize, logoSize),
+		Position = UDim2.fromOffset(lib.M.Pad + 4, math.floor((TB - logoSize) / 2)), Size = UDim2.fromOffset(logoSize, logoSize),
 		BackgroundTransparency = 1, Image = lib.Logo, ScaleType = Enum.ScaleType.Fit,
 	}, topbar)
 	lib.LogoImage = logo
 	local tx = lib.M.Pad + 4 + logoSize + 10
-	local ty = (TB - 34) / 2
+	local ty = math.floor((TB - 34) / 2)
 	local title = lib:Text(topbar, lib.Name, 14, "TitleColor", 3)
 	title.Position = UDim2.fromOffset(tx, ty)
 	title.Size = UDim2.new(1, -(tx + 52), 0, 18)
