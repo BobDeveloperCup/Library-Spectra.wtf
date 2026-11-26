@@ -48,7 +48,7 @@ local DefaultTheme = {
 	Hover = Color3.fromRGB(34, 34, 34),
 	Border = Color3.fromRGB(39, 39, 39),
 	Text = Color3.fromRGB(245, 245, 245),
-	Muted = Color3.fromRGB(125, 125, 125),
+	Muted = Color3.fromRGB(165, 165, 165),
 	Accent = Color3.fromRGB(255, 255, 255),
 	Success = Color3.fromRGB(94, 203, 134),
 	Error = Color3.fromRGB(235, 87, 87),
@@ -102,7 +102,7 @@ local Styles = {
 		Rounding = 8,
 		Palette = {
 			Background = rgb(10, 10, 10), Sidebar = rgb(13, 13, 13), Surface = rgb(18, 18, 18), Element = rgb(25, 25, 25),
-			Hover = rgb(34, 34, 34), Border = rgb(39, 39, 39), Text = rgb(245, 245, 245), Muted = rgb(125, 125, 125),
+			Hover = rgb(34, 34, 34), Border = rgb(39, 39, 39), Text = rgb(245, 245, 245), Muted = rgb(165, 165, 165),
 			Accent = rgb(255, 255, 255),
 		},
 		Material = { Window = 0, Content = 0, Surface = 0, Element = 0, Popup = 0, StrokeShift = 0, StrokeWidth = 1, Blur = 0 },
@@ -561,7 +561,7 @@ Spectra.Icons = IconManager.Catalog
 local FontScale = 1
 
 local function fs(size)
-	return math.max(8, math.floor(size * FontScale + 0.5))
+	return math.max(9, math.floor(size * FontScale + 1.5))
 end
 
 local function new(class, props, parent)
@@ -1081,19 +1081,18 @@ function Spectra:Scaled(frame)
 end
 
 function Spectra:SetFontScale(value)
-    FontScale = math.clamp(tonumber(value) or 1, 0.7, 1.4)
-
-    if self.Gui then
-        for _, instance in ipairs(self.Gui:GetDescendants()) do
-            if instance:IsA("TextLabel") or instance:IsA("TextButton") or instance:IsA("TextBox") then
-                local baseSize = instance:GetAttribute("BaseSize")
-
-                if baseSize then
-                    instance.TextSize = fs(baseSize)
-                end
-            end
-        end
-    end
+	FontScale = math.clamp(tonumber(value) or 1, 0.7, 1.4)
+	if not self.Gui then
+		return
+	end
+	for _, instance in ipairs(self.Gui:GetDescendants()) do
+		if instance:IsA("TextLabel") or instance:IsA("TextButton") or instance:IsA("TextBox") then
+			local baseSize = instance:GetAttribute("BaseSize")
+			if baseSize then
+				instance.TextSize = fs(baseSize)
+			end
+		end
+	end
 end
 
 function Spectra:SetScale(value)
