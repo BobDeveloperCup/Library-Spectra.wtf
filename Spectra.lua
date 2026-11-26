@@ -1149,8 +1149,18 @@ function Spectra:SetIcon(holder, name)
 	if img.Visible then
 		showGlyph(nil)
 	else
-		local clean = tostring(name):gsub("[^%w]", "")
-		showGlyph(clean ~= "" and clean:sub(1, 1):upper() or "?")
+		local clean = tostring(name):gsub("[^%w]", ""):lower()
+		local fallback = {
+			house = "⌂", home = "⌂", settings = "⚙", cog = "⚙", menu = "☰",
+			keyboard = "⌨", keyboardmusic = "⌨", palette = "◈", slidershorizontal = "☷",
+			list = "☷", layoutdashboard = "▦", houseplus = "⌂", info = "ⓘ",
+			bell = "♢", search = "⌕", user = "♙", users = "♙", shield = "⬡",
+			star = "☆", sparkles = "✧", play = "▶", pause = "Ⅱ", check = "✓",
+			x = "×", close = "×", power = "⏻", save = "▣", trash = "⌫",
+			palette = "◈", eye = "◎", eyeoff = "◉", listfilter = "☷",
+			mousepointer = "➤", sliders = "☷", puzzle = "◇", house = "⌂",
+		}
+		showGlyph(fallback[clean] or (clean ~= "" and clean:sub(1, 1):upper() or "?"))
 	end
 end
 
@@ -4405,8 +4415,8 @@ function Spectra:CreateKeybindMenu(opts)
 		return self.KeybindMenu
 	end
 	local panel = self:CreatePanel({
-		Title = opts.Title or "Keybinds", Icon = "Keyboard", Size = Vector2.new(opts.Width or 210, 70),
-		Position = opts.Position or UDim2.new(0, 20, 0.4, 0), AutoHeight = true, MaxHeight = opts.MaxHeight or 240,
+		Title = opts.Title or "Keybinds", Icon = "Keyboard", Size = Vector2.new(opts.Width or (self.IsMobile and 210 or 250), 70),
+		Position = opts.Position or UDim2.new(0, 20, 0.4, 0), AutoHeight = true, MaxHeight = opts.MaxHeight or (self.IsMobile and 240 or 300),
 		Collapsible = true, Visible = opts.Visible == true, EntryPadding = 3,
 	})
 	panel.Entries = {}
@@ -5252,7 +5262,7 @@ end
 function Spectra.ComputeMetrics(mobile, viewport, density)
 	local m = {}
 	local compact = density == "Compact"
-	local k = compact and 0.86 or 1.1
+	local k = compact and (mobile and 0.86 or 0.98) or (mobile and 1.1 or 1.14)
 	local function s(value, minimum)
 		return math.max(minimum or 0, math.floor(value * k + 0.5))
 	end
@@ -5284,7 +5294,7 @@ function Spectra.ComputeMetrics(mobile, viewport, density)
 		m.Tab, m.TopBar, m.Bar = s(34, 29), math.floor(52 * (compact and 0.92 or 1.04) + 0.5), s(38, 32)
 		m.Side, m.SideCompact = s(164, 140), s(56, 52)
 		m.Header, m.HeaderDesc = s(30, 26), s(40, 36)
-		m.Font = compact and 0.94 or 1
+		m.Font = compact and 1 or 1.06
 	end
 	return m
 end
