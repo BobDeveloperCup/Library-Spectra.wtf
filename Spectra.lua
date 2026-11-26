@@ -27,7 +27,7 @@ local GuiService = getService("GuiService")
 
 local Spectra = {}
 Spectra.__index = Spectra
-Spectra.Version = "2.1.1"
+Spectra.Version = "2.1.2"
 Spectra.Name = "Spectra.wtf"
 Spectra.DefaultLogo = "rbxassetid://96535159972301"
 
@@ -335,17 +335,15 @@ end
 
 function IconManager:Get(name)
 	local key = self:Resolve(name)
-	local missing = false
 	if not key then
-		missing = true
-		key = self.Fallback
 		local label = tostring(name)
 		if not self.Warned[label] then
 			self.Warned[label] = true
-			warn(("[Spectra] ícone '%s' não existe no catálogo; usando fallback"):format(label))
+			warn(("[Spectra] ícone '%s' não existe no catálogo"):format(label))
 		end
+		return nil
 	end
-	local cell = key and self.Catalog[key]
+	local cell = self.Catalog[key]
 	if not cell then
 		return nil
 	end
@@ -356,7 +354,6 @@ function IconManager:Get(name)
 		Content = self.Content,
 		Offset = offset,
 		Size = size,
-		Missing = missing,
 	}
 end
 
@@ -549,12 +546,6 @@ end
 IconManager:Load(CatalogData)
 for alias, target in pairs(LegacyAliases) do
 	IconManager.Aliases[alias] = target
-end
-for _, candidate in ipairs({ "circle-help", "circle-dashed", "square", "circle" }) do
-	if IconManager.Catalog[candidate] then
-		IconManager.Fallback = candidate
-		break
-	end
 end
 Spectra.Icons = IconManager.Catalog
 
@@ -1115,12 +1106,6 @@ local function applyIcon(self, holder)
 	img.ImageColor3 = tint
 	local alpha = holder:GetAttribute("Alpha") or 0
 	img.ImageTransparency = alpha
-	local glyph = holder:FindFirstChild("Glyph")
-	if glyph then
-		glyph.TextColor3 = color
-		glyph.TextTransparency = alpha
-		glyph.Font = self:GetFont(3)
-	end
 end
 
 function Spectra:SetIcon(holder, name)
@@ -1128,20 +1113,9 @@ function Spectra:SetIcon(holder, name)
 	if not img then
 		return
 	end
-	local glyph = holder:FindFirstChild("Glyph")
-	local function showGlyph(label)
-		if not glyph then
-			return
-		end
-		glyph.Visible = label ~= nil
-		if label then
-			glyph.Text = label
-		end
-	end
 	if name == nil or name == "" then
 		holder:SetAttribute("IconName", nil)
 		img.Visible = false
-		showGlyph(nil)
 		return
 	end
 	local asset = toAsset(name)
@@ -1149,30 +1123,13 @@ function Spectra:SetIcon(holder, name)
 		holder:SetAttribute("IconName", nil)
 		img.ScaleType = Enum.ScaleType.Fit
 		img.Image = asset
-		img.ImageRectOffset = Vector2.new(0, 0)
-		img.ImageRectSize = Vector2.new(0, 0)
+		img.ImageRectOffset = Vector2.zero
+		img.ImageRectSize = Vector2.zero
 		img.Visible = true
-		showGlyph(nil)
 		return
 	end
 	holder:SetAttribute("IconName", tostring(name))
 	IconManager:Apply(img, name)
-	if img.Visible then
-		showGlyph(nil)
-	else
-		local clean = tostring(name):gsub("[^%w]", ""):lower()
-		local fallback = {
-			house = "⌂", home = "⌂", settings = "⚙", cog = "⚙", menu = "☰",
-			keyboard = "⌨", keyboardmusic = "⌨", palette = "◈", slidershorizontal = "☷",
-			list = "☷", layoutdashboard = "▦", houseplus = "⌂", info = "ⓘ",
-			bell = "♢", search = "⌕", user = "♙", users = "♙", shield = "⬡",
-			star = "☆", sparkles = "✧", play = "▶", pause = "Ⅱ", check = "✓",
-			x = "×", close = "×", power = "⏻", save = "▣", trash = "⌫",
-			palette = "◈", eye = "◎", eyeoff = "◉", listfilter = "☷",
-			mousepointer = "➤", sliders = "☷", puzzle = "◇", house = "⌂",
-		}
-		showGlyph(fallback[clean] or (clean ~= "" and clean:sub(1, 1):upper() or "?"))
-	end
 end
 
 function Spectra:SetIconColor(holder, key)
@@ -1204,10 +1161,6 @@ function Spectra:Icon(parent, name, size, colorKey, noTint)
 	new("ImageLabel", {
 		Name = "Img", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1),
 		ScaleType = Enum.ScaleType.Fit, Image = "", Visible = false,
-	}, holder)
-	new("TextLabel", {
-		Name = "Glyph", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Text = "", TextScaled = true,
-		Visible = false,
 	}, holder)
 	IconManager.Holders[holder] = self
 	self:SetIcon(holder, name)
@@ -5315,7 +5268,7 @@ function Spectra.ComputeMetrics(mobile, viewport, density)
 		m.Tab, m.TopBar, m.Bar = s(35, 30), math.floor(52 * (compact and 0.94 or 1.06) * resolution + 0.5), s(39, 33)
 		m.Side, m.SideCompact = s(166, 142), s(58, 52)
 		m.Header, m.HeaderDesc = s(31, 27), s(41, 37)
-		m.Font = math.clamp((compact and 1 or 1.04) * resolution, 0.94, 1.12)
+		m.Font = 1
 	end
 	return m
 end
