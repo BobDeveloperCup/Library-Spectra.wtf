@@ -203,7 +203,7 @@ local function toAsset(name)
 end
 
 local IconManager = {
-	Asset = "rbxassetid://139871994703359",
+	Asset = "rbxassetid://136580449063345",
 	Cell = 25,
 	Size = 24,
 	Sheet = { Width = 1000, Height = 1000, OffsetX = -1, OffsetY = 0 },
