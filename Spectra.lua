@@ -27,7 +27,7 @@ local GuiService = getService("GuiService")
 
 local Spectra = {}
 Spectra.__index = Spectra
-Spectra.Version = "2.1.0"
+Spectra.Version = "2.1.1"
 Spectra.Name = "Spectra.wtf"
 Spectra.DefaultLogo = "rbxassetid://96535159972301"
 
@@ -1391,6 +1391,7 @@ function Spectra:TrackDrag(frame, callback, onEnd, options)
 		Size = UDim2.fromScale(1, 1), ZIndex = 10,
 	}, frame)
 	local state, current, origin = "idle", nil, nil
+	local owner = {}
 	local function update(position)
 		local point = self:GuiPoint(position)
 		local ap, size = frame.AbsolutePosition, frame.AbsoluteSize
@@ -1402,6 +1403,9 @@ function Spectra:TrackDrag(frame, callback, onEnd, options)
 	local function release()
 		if state == "drag" then
 			self:LockScroll(false)
+		end
+		if self.ActiveTrackDrag == owner then
+			self.ActiveTrackDrag = nil
 		end
 		state, current, origin = "idle", nil, nil
 	end
@@ -1416,6 +1420,10 @@ function Spectra:TrackDrag(frame, callback, onEnd, options)
 		if not isPress(input) or state ~= "idle" then
 			return
 		end
+		if self.ActiveTrackDrag and self.ActiveTrackDrag ~= owner then
+			return
+		end
+		self.ActiveTrackDrag = owner
 		current, origin = input, input.Position
 		if input.UserInputType == Enum.UserInputType.Touch and not immediate then
 			state = "pending"
@@ -5298,14 +5306,16 @@ function Spectra.ComputeMetrics(mobile, viewport, density)
 		m.HeaderDesc = s(40 * d, 36)
 		m.Font = math.clamp(0.95 * d + 0.1, 0.92, 1.12) * (compact and 0.96 or 1)
 	else
-		m.Density = 1
-		m.Row, m.Button, m.Input, m.ListItem = s(26, 22), s(28, 24), s(26, 22), s(24, 21)
-		m.SliderHit = s(16, 14)
+		local resolution = math.clamp(math.min(viewport.X / 1600, viewport.Y / 900), 0.92, 1.08)
+		k = (compact and 0.98 or 1.10) * resolution
+		m.Density = resolution
+		m.Row, m.Button, m.Input, m.ListItem = s(27, 23), s(29, 25), s(27, 23), s(25, 22)
+		m.SliderHit = s(19, 16)
 		m.Pad, m.Gap = s(10, 8), s(8, 6)
-		m.Tab, m.TopBar, m.Bar = s(34, 29), math.floor(52 * (compact and 0.92 or 1.04) + 0.5), s(38, 32)
-		m.Side, m.SideCompact = s(164, 140), s(56, 52)
-		m.Header, m.HeaderDesc = s(30, 26), s(40, 36)
-		m.Font = compact and 1 or 1.06
+		m.Tab, m.TopBar, m.Bar = s(35, 30), math.floor(52 * (compact and 0.94 or 1.06) * resolution + 0.5), s(39, 33)
+		m.Side, m.SideCompact = s(166, 142), s(58, 52)
+		m.Header, m.HeaderDesc = s(31, 27), s(41, 37)
+		m.Font = math.clamp((compact and 1 or 1.04) * resolution, 0.94, 1.12)
 	end
 	return m
 end
